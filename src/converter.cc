@@ -17,6 +17,7 @@ limitations under the License.
 #include "converter.h"
 
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
