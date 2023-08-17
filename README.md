@@ -1,5 +1,5 @@
 <p align="center">
-<img src="img/minimalloc.png" width="480" height="240" >
+<img src="img/minimalloc.png">
 </p>
 
 Source code for our [ASPLOS 2024](https://www.asplos-conference.org/asplos2024/) paper, "***MiniMalloc: A Lightweight Memory Allocator for Hardware-Accelerated Machine Learning***."
