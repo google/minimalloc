@@ -23,12 +23,12 @@ limitations under the License.
 namespace minimalloc {
 
 enum ValidationResult {
-  GOOD = 0,
-  BAD_SOLUTION = 1,  // Solution structure is incorrect, eg. wrong # of offsets.
-  BAD_FIXED = 2,  // A buffer w/ a fixed offset is assigned somewhere else.
-  BAD_OFFSET = 3,  // The offset is out-of-bounds, ie. negative or beyond cap.
-  BAD_OVERLAP = 4,  // At least one pair of buffers overlaps in space and time.
-  BAD_ALIGNMENT = 5  // At least one buffer was not properly aligned.
+  kGood = 0,
+  kBadSolution = 1,  // Solution structure is incorrect, eg. wrong # of offsets.
+  kBadFixed = 2,  // A buffer w/ a fixed offset is assigned somewhere else.
+  kBadOffset = 3,  // The offset is out-of-bounds, ie. negative or beyond cap.
+  kBadOverlap = 4,  // At least one pair of buffers overlaps in space and time.
+  kBadAlignment = 5  // At least one buffer was not properly aligned.
 };
 
 bool Overlaps(const Buffer& b1, const Buffer& b2);

@@ -58,15 +58,15 @@ bool Overlaps(const Buffer& b1, const Buffer& b2) {
 
 ValidationResult Validate(const Problem& problem, const Solution& solution) {
   // Check that the number of buffers matches the number of offsets.
-  if (problem.buffers.size() != solution.offsets.size()) return BAD_SOLUTION;
+  if (problem.buffers.size() != solution.offsets.size()) return kBadSolution;
   // Check fixed buffers & check that offsets are within the allowable range.
   for (auto buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
     const Buffer& buffer = problem.buffers[buffer_idx];
     const Offset offset = solution.offsets[buffer_idx];
-    if (buffer.offset && *buffer.offset != offset) return BAD_FIXED;
-    if (offset < 0) return BAD_OFFSET;
-    if (offset + buffer.size > problem.capacity) return BAD_OFFSET;
-    if (offset % buffer.alignment != 0) return BAD_ALIGNMENT;
+    if (buffer.offset && *buffer.offset != offset) return kBadFixed;
+    if (offset < 0) return kBadOffset;
+    if (offset + buffer.size > problem.capacity) return kBadOffset;
+    if (offset % buffer.alignment != 0) return kBadAlignment;
   }
   // Check that no two buffers overlap in both space and time, the O(n^2) way.
   for (BufferIdx i = 0; i < problem.buffers.size(); ++i) {
@@ -79,10 +79,10 @@ ValidationResult Validate(const Problem& problem, const Solution& solution) {
           offset_j + buffer_j.size <= offset_i) {
         continue;
       }
-      if (Overlaps(buffer_i, buffer_j)) return BAD_OVERLAP;
+      if (Overlaps(buffer_i, buffer_j)) return kBadOverlap;
     }
   }
-  return GOOD;
+  return kGood;
 }
 
 }  // namespace minimalloc

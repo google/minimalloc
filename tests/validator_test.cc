@@ -85,7 +85,7 @@ TEST(ValidatorTest, ValidatesGoodSolution) {
   };
   // right # of offsets, in range, no overlaps
   Solution solution = {.offsets = {0, 0, 1, 0}};
-  EXPECT_EQ(Validate(problem, solution), GOOD);
+  EXPECT_EQ(Validate(problem, solution), kGood);
 }
 
 TEST(ValidatorTest, ValidatesGoodSolutionWithGaps) {
@@ -98,7 +98,7 @@ TEST(ValidatorTest, ValidatesGoodSolutionWithGaps) {
   };
   // right # of offsets, in range, no overlaps
   Solution solution = {.offsets = {0, 0}};
-  EXPECT_EQ(Validate(problem, solution), GOOD);
+  EXPECT_EQ(Validate(problem, solution), kGood);
 }
 
 TEST(ValidatorTest, ValidatesGoodSolutionWithGapsEdgeCase) {
@@ -111,7 +111,7 @@ TEST(ValidatorTest, ValidatesGoodSolutionWithGapsEdgeCase) {
   };
   // right # of offsets, in range, no overlaps
   Solution solution = {.offsets = {0, 0}};
-  EXPECT_EQ(Validate(problem, solution), GOOD);
+  EXPECT_EQ(Validate(problem, solution), kGood);
 }
 
 TEST(ValidatorTest, InvalidatesBadSolution) {
@@ -124,7 +124,7 @@ TEST(ValidatorTest, InvalidatesBadSolution) {
       .capacity = 2
   };
   Solution solution = {.offsets = {0, 0}};  // wrong # of offsets
-  EXPECT_EQ(Validate(problem, solution), BAD_SOLUTION);
+  EXPECT_EQ(Validate(problem, solution), kBadSolution);
 }
 
 TEST(ValidatorTest, InvalidatesFixedBuffer) {
@@ -137,7 +137,7 @@ TEST(ValidatorTest, InvalidatesFixedBuffer) {
       .capacity = 2
   };
   Solution solution = {.offsets = {0, 0, 1}};  // last buffer needs offset @ 0
-  EXPECT_EQ(Validate(problem, solution), BAD_FIXED);
+  EXPECT_EQ(Validate(problem, solution), kBadFixed);
 }
 
 TEST(ValidatorTest, InvalidatesNegativeOffset) {
@@ -150,7 +150,7 @@ TEST(ValidatorTest, InvalidatesNegativeOffset) {
       .capacity = 2
   };
   Solution solution = {.offsets = {0, 0, -1}};  // offset is negative
-  EXPECT_EQ(Validate(problem, solution), BAD_OFFSET);
+  EXPECT_EQ(Validate(problem, solution), kBadOffset);
 }
 
 TEST(ValidatorTest, InvalidatesOutOfRangeOffset) {
@@ -163,7 +163,7 @@ TEST(ValidatorTest, InvalidatesOutOfRangeOffset) {
       .capacity = 2
   };
   Solution solution = {.offsets = {0, 0, 2}};  // buffer lies outside range
-  EXPECT_EQ(Validate(problem, solution), BAD_OFFSET);
+  EXPECT_EQ(Validate(problem, solution), kBadOffset);
 }
 
 TEST(ValidatorTest, InvalidatesOverlap) {
@@ -176,7 +176,7 @@ TEST(ValidatorTest, InvalidatesOverlap) {
       .capacity = 2
   };
   Solution solution = {.offsets = {0, 0, 0}};  // final two buffers overlap
-  EXPECT_EQ(Validate(problem, solution), BAD_OVERLAP);
+  EXPECT_EQ(Validate(problem, solution), kBadOverlap);
 }
 
 TEST(ValidatorTest, InvalidatesMisalignment) {
@@ -188,7 +188,7 @@ TEST(ValidatorTest, InvalidatesMisalignment) {
       .capacity = 2
   };
   Solution solution = {.offsets = {0, 1}};  // offset of 1 isn't a multiple of 2
-  EXPECT_EQ(Validate(problem, solution), BAD_ALIGNMENT);
+  EXPECT_EQ(Validate(problem, solution), kBadAlignment);
 }
 
 TEST(ValidatorTest, InvalidatesGapOverlap) {
@@ -201,7 +201,7 @@ TEST(ValidatorTest, InvalidatesGapOverlap) {
   };
   // right # of offsets, in range, no overlaps
   Solution solution = {.offsets = {0, 0}};
-  EXPECT_EQ(Validate(problem, solution), BAD_OVERLAP);
+  EXPECT_EQ(Validate(problem, solution), kBadOverlap);
 }
 
 }  // namespace
