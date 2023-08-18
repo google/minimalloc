@@ -72,24 +72,20 @@ SweepResult Sweep(const Problem& problem) {
   points.reserve(num_buffers * 2);  // Reserve 2 spots per buffer.
   for (BufferIdx buffer_idx = 0; buffer_idx < num_buffers; ++buffer_idx) {
     const Buffer& buffer = problem.buffers[buffer_idx];
-    points.push_back(
-        Point{.buffer_idx = buffer_idx,
-              .time_value = buffer.lifespan.lower(),
-              .point_type = PointType::kLeft});
+    points.push_back({.buffer_idx = buffer_idx,
+                      .time_value = buffer.lifespan.lower(),
+                      .point_type = PointType::kLeft});
     for (const Gap& gap : buffer.gaps) {
-      points.push_back(
-          Point{.buffer_idx = buffer_idx,
-                .time_value = gap.lifespan.lower(),
-                .point_type = PointType::kRightGap});
-      points.push_back(
-          Point{.buffer_idx = buffer_idx,
-                .time_value = gap.lifespan.upper(),
-                .point_type = PointType::kLeftGap});
+      points.push_back({.buffer_idx = buffer_idx,
+                        .time_value = gap.lifespan.lower(),
+                        .point_type = PointType::kRightGap});
+      points.push_back({.buffer_idx = buffer_idx,
+                        .time_value = gap.lifespan.upper(),
+                        .point_type = PointType::kLeftGap});
     }
-    points.push_back(
-        Point{.buffer_idx = buffer_idx,
-              .time_value = buffer.lifespan.upper(),
-              .point_type = PointType::kRight});
+    points.push_back({.buffer_idx = buffer_idx,
+                      .time_value = buffer.lifespan.upper(),
+                      .point_type = PointType::kRight});
   }
   std::sort(points.begin(), points.end(), kPointComparator);
   Section actives, alive;
