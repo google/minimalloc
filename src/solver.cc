@@ -213,8 +213,8 @@ class SolverImpl {
   void RestoreSectionData(
       const std::vector<SectionChange>& section_changes,
       BufferIdx buffer_idx) {
-    for (const SectionChange& change : section_changes | std::views::reverse) {
-      section_data_[change.section_idx].floor = change.floor;
+    for (auto c = section_changes.rbegin(); c != section_changes.rend(); ++c) {
+      section_data_[c->section_idx].floor = c->floor;
     }
     // For any section this buffer resides in, increase the sum.
     const Buffer& buffer = problem_.buffers[buffer_idx];
@@ -261,8 +261,8 @@ class SolverImpl {
 
   // Restores the minimum offsets by reversing any recorded changes.
   void RestoreMinOffsets(const std::vector<OffsetChange>& offset_changes) {
-    for (const OffsetChange& change : offset_changes | std::views::reverse) {
-      min_offsets_[change.buffer_idx] = change.min_offset;
+    for (auto c = offset_changes.rbegin(); c != offset_changes.rend(); ++c) {
+      min_offsets_[c->buffer_idx] = c->min_offset;
     }
   }
 
