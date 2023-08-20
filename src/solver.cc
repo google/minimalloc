@@ -511,7 +511,7 @@ absl::StatusOr<std::vector<BufferIdx>>
                            &backtracks_, &cancelled_);
     auto solution = solver_impl.Solve();
     if (absl::IsDeadlineExceeded(solution.status())) return solution.status();
-    if (include[buffer_idx] = solution.ok()) subset.push_back(buffer_idx);
+    if ((include[buffer_idx] = solution.ok())) subset.push_back(buffer_idx);
   }
   return subset;
 }
