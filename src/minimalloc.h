@@ -40,6 +40,10 @@ struct Interval {
   bool operator==(const Interval<T>& other) const {
     return lower_ == other.lower_ && upper_ == other.upper_;
   }
+  bool operator<(const Interval<T>& other) const {
+    if (lower_ != other.lower_) return lower_ < other.lower_;
+    return upper_ < other.upper_;
+  }
 };
 
 using BufferIdx = int64_t;  // An index into a Problem's list of buffers.
