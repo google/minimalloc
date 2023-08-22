@@ -473,7 +473,7 @@ bool PreorderingComparator::operator()(
   return a.buffer_idx < b.buffer_idx;
 }
 
-Solver::Solver() = default;
+Solver::Solver() {}
 
 Solver::Solver(const SolverParams& params) : params_(params) {}
 
