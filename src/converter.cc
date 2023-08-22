@@ -87,10 +87,10 @@ std::string ToCsv(const Problem& problem, Solution* solution) {
 absl::StatusOr<Problem> FromCsv(absl::string_view input) {
   Problem problem;
   absl::flat_hash_map<std::string, int> col_map;
-  std::vector<absl::string_view> records = absl::StrSplit(input, "\n");
+  std::vector<absl::string_view> records = absl::StrSplit(input, '\n');
   for (const std::string_view& record : records) {
     if (record.empty()) break;
-    std::vector<absl::string_view> fields = absl::StrSplit(record, ",");
+    std::vector<absl::string_view> fields = absl::StrSplit(record, ',');
     if (col_map.empty()) {  // Need to read header row (to determine columns).
       for (int field_idx = 0; field_idx < fields.size(); ++field_idx) {
         // If column reads 'buffer_id', change it to 'buffer' for consistency.
