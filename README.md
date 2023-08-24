@@ -44,7 +44,8 @@ b5,0,20,4,0
 <pre>
 @inproceedings{Moffitt2024,
   title = {Mini{M}alloc: A Lightweight Memory Allocator for Hardware-Accelerated Machine Learning},
-  booktitle = {Proceedings of the 29th International Conference on Architectural Support for Programming Languages and Operating Systems, Volume 1},
+  booktitle = {Proceedings of the 29th International Conference on Architectural Support for Programming Languages and Operating Systems},
+  volume = {1},
   author = {Moffitt, Michael D.},
   year = {2024},
   series = {ASPLOS 2024}
