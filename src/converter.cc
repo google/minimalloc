@@ -149,18 +149,18 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input) {
       if (!absl::SimpleAtoi(fields[col_map[kOffset]], &offset)) {
         return absl::InvalidArgumentError("Improperly formed offset");
       }
-      problem.buffers.push_back(Buffer{.id = id,
-                                       .lifespan = {start, end + 1},
-                                       .size = size,
-                                       .alignment = alignment,
-                                       .gaps = gaps,
-                                       .offset = offset});
+      problem.buffers.push_back({.id = id,
+                                 .lifespan = {start, end + 1},
+                                 .size = size,
+                                 .alignment = alignment,
+                                 .gaps = gaps,
+                                 .offset = offset});
     } else {
-      problem.buffers.push_back(Buffer{.id = id,
-                                       .lifespan = {start, end + 1},
-                                       .size = size,
-                                       .alignment = alignment,
-                                       .gaps = gaps});
+      problem.buffers.push_back({.id = id,
+                                 .lifespan = {start, end + 1},
+                                 .size = size,
+                                 .alignment = alignment,
+                                 .gaps = gaps});
     }
   }
   return problem;
