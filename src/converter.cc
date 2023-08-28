@@ -113,6 +113,7 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input) {
     const std::string& id = static_cast<std::string>(fields[col_map[kBuffer]]);
     int64_t start = -1, end = -1, size = -1, alignment = 1;
     std::vector<Gap> gaps;
+    std::optional<Offset> offset;
     if (!absl::SimpleAtoi(fields[col_map[kStart]], &start) ||
         !absl::SimpleAtoi(fields[col_map[kEnd]], &end) ||
         !absl::SimpleAtoi(fields[col_map[kSize]], &size)) {
@@ -145,23 +146,18 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input) {
       }
     }
     if (col_map.contains(kOffset)) {
-      int offset = -1;
-      if (!absl::SimpleAtoi(fields[col_map[kOffset]], &offset)) {
+      int offset_val = -1;
+      if (!absl::SimpleAtoi(fields[col_map[kOffset]], &offset_val)) {
         return absl::InvalidArgumentError("Improperly formed offset");
       }
-      problem.buffers.push_back({.id = id,
-                                 .lifespan = {start, end + 1},
-                                 .size = size,
-                                 .alignment = alignment,
-                                 .gaps = gaps,
-                                 .offset = offset});
-    } else {
-      problem.buffers.push_back({.id = id,
-                                 .lifespan = {start, end + 1},
-                                 .size = size,
-                                 .alignment = alignment,
-                                 .gaps = gaps});
+      offset = offset_val;
     }
+    problem.buffers.push_back({.id = id,
+                               .lifespan = {start, end + 1},
+                               .size = size,
+                               .alignment = alignment,
+                               .gaps = gaps,
+                               .offset = offset});
   }
   return problem;
 }
