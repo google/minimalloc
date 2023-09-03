@@ -56,6 +56,8 @@ ABSL_FLAG(bool, monotonic_floor, true,
 ABSL_FLAG(std::string, preordering_heuristics, "LAT,TAL,TLA",
           "Static preordering heuristics to attempt.");
 
+ABSL_FLAG(int64_t, converter_addend, 0, "Adjusts addends in the converter.");
+
 // Solves a given problem using the Solver.
 int main(int argc, char* argv[]) {
   absl::ParseCommandLine(argc, argv);
@@ -75,7 +77,8 @@ int main(int argc, char* argv[]) {
   std::ifstream ifs(absl::GetFlag(FLAGS_input));
   std::string csv((std::istreambuf_iterator<char>(ifs)),
                   (std::istreambuf_iterator<char>()   ));
-  absl::StatusOr<minimalloc::Problem> problem = minimalloc::FromCsv(csv);
+  absl::StatusOr<minimalloc::Problem> problem =
+      minimalloc::FromCsv(csv, absl::GetFlag(FLAGS_converter_addend));
   if (!problem.ok()) return 1;
   problem->capacity = absl::GetFlag(FLAGS_capacity);
   minimalloc::Solver solver(params);

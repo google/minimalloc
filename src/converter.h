@@ -17,6 +17,7 @@ limitations under the License.
 #ifndef MINIMALLOC_CONVERTER_H_
 #define MINIMALLOC_CONVERTER_H_
 
+#include <cstdint>
 #include <string>
 
 #include "minimalloc.h"
@@ -28,25 +29,24 @@ namespace minimalloc {
 // Converts a Problem, along with an optional Solution, into a CSV like this:
 //
 //      buffer,start,end,size,alignment
-//      0,10,19,1,1
-//      1,20,39,2,1
-//      2,10,39,3,2
+//      0,10,20,1,1
+//      1,20,40,2,1
+//      2,10,40,3,2
 //
-// Notably, these 'end' column values are inclusive!  If a solution is provided,
-// an additional "offset" column will be created.
+// If a solution is provided, an additional "offset" column will be created.
 std::string ToCsv(const Problem& problem, Solution* solution = nullptr);
 
 // Given a CSV like the one below (with buffers listed in any order), converts
 // it into a Problem instance or returns a status if the problem is malformed:
 //
 //      buffer,start,end,size,alignment
-//      1,20,19,2,1
-//      0,10,19,1,1
-//      2,10,39,3,2
+//      1,20,20,2,1
+//      0,10,20,1,1
+//      2,10,40,3,2
 //
-// Notably, these 'end' column values are inclusive!  If an offset column is
-// provided, these values will be stored into each buffer's offset member field.
-absl::StatusOr<Problem> FromCsv(absl::string_view input);
+// If an offset column is provided, these values will be stored into each
+// buffer's offset member field.
+absl::StatusOr<Problem> FromCsv(absl::string_view input, int64_t addend = 0);
 
 }  // namespace minimalloc
 

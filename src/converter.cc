@@ -16,6 +16,7 @@ limitations under the License.
 
 #include "converter.h"
 
+#include <cstdint>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -64,11 +65,11 @@ std::string ToCsv(const Problem& problem, Solution* solution) {
     gaps.reserve(buffer.gaps.size());
     for (const Gap& gap : buffer.gaps) {
       gaps.push_back(
-          absl::StrCat(gap.lifespan.lower(), "-", gap.lifespan.upper() - 1));
+          absl::StrCat(gap.lifespan.lower(), "-", gap.lifespan.upper()));
     }
     std::vector<std::string> record = {absl::StrCat(buffer.id),
                                        absl::StrCat(lifespan.lower()),
-                                       absl::StrCat(lifespan.upper() - 1),
+                                       absl::StrCat(lifespan.upper()),
                                        absl::StrCat(buffer.size),
                                        absl::StrCat(buffer.alignment),
                                        absl::StrJoin(gaps, " ")};
@@ -84,7 +85,7 @@ std::string ToCsv(const Problem& problem, Solution* solution) {
   return oss.str();
 }
 
-absl::StatusOr<Problem> FromCsv(absl::string_view input) {
+absl::StatusOr<Problem> FromCsv(absl::string_view input, int64_t addend) {
   Problem problem;
   absl::flat_hash_map<std::string, int> col_map;
   std::vector<absl::string_view> records = absl::StrSplit(input, '\n');
@@ -142,7 +143,7 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input) {
             return absl::InvalidArgumentError(
                 absl::StrCat("Improperly formed gap: ", gap));
         }
-        gaps.push_back({.lifespan = {gap_start, gap_end + 1}});
+        gaps.push_back({.lifespan = {gap_start, gap_end + addend}});
       }
     }
     if (col_map.contains(kOffset)) {
@@ -153,7 +154,7 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input) {
       offset = offset_val;
     }
     problem.buffers.push_back({.id = id,
-                               .lifespan = {start, end + 1},
+                               .lifespan = {start, end + addend},
                                .size = size,
                                .alignment = alignment,
                                .gaps = gaps,

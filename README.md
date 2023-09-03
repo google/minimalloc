@@ -15,11 +15,11 @@ $ git clone --recursive git@github.com:google/minimalloc.git && \
 
 <pre>
 buffer,start,end,size
-b1,0,2,4
-b2,3,8,4
-b3,0,8,4
-b4,9,20,4
-b5,0,20,4
+b1,0,3,4
+b2,3,9,4
+b3,0,9,4
+b4,9,21,4
+b5,0,21,4
 </pre>
 
 ## Example usage
