@@ -45,15 +45,37 @@ constexpr absl::string_view kOffset = "offset";
 constexpr absl::string_view kAlignment = "alignment";
 constexpr absl::string_view kGaps = "gaps";
 
+bool IncludeAlignment(const Problem& problem) {
+  for (auto buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
+    const Buffer& buffer = problem.buffers[buffer_idx];
+    if (buffer.alignment != 1) return true;
+  }
+  return false;
+}
+
+bool IncludeGaps(const Problem& problem) {
+  for (auto buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
+    const Buffer& buffer = problem.buffers[buffer_idx];
+    if (!buffer.gaps.empty()) return true;
+  }
+  return false;
+}
+
 }  // namespace
 
 std::string ToCsv(const Problem& problem, Solution* solution) {
+  const bool include_alignment = IncludeAlignment(problem);
+  const bool include_gaps = IncludeGaps(problem);
   std::vector<std::string> header = {std::string(kBuffer),
                                      std::string(kStart),
                                      std::string(kEnd),
-                                     std::string(kSize),
-                                     std::string(kAlignment),
-                                     std::string(kGaps)};
+                                     std::string(kSize)};
+  if (include_alignment) {
+    header.push_back(std::string(kAlignment));
+  }
+  if (include_gaps) {
+    header.push_back(std::string(kGaps));
+  }
   if (solution) {
     header.push_back(std::string(kOffset));
   }
@@ -70,9 +92,13 @@ std::string ToCsv(const Problem& problem, Solution* solution) {
     std::vector<std::string> record = {absl::StrCat(buffer.id),
                                        absl::StrCat(lifespan.lower()),
                                        absl::StrCat(lifespan.upper()),
-                                       absl::StrCat(buffer.size),
-                                       absl::StrCat(buffer.alignment),
-                                       absl::StrJoin(gaps, " ")};
+                                       absl::StrCat(buffer.size)};
+    if (include_alignment) {
+      record.push_back(absl::StrCat(buffer.alignment));
+    }
+    if (include_gaps) {
+      record.push_back(absl::StrJoin(gaps, " "));
+    }
     if (solution) {
       record.push_back(std::to_string(solution->offsets[buffer_idx]));
     }

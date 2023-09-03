@@ -26,8 +26,7 @@ namespace {
 
 TEST(ConverterTest, ToCsv) {
   EXPECT_EQ(
-      ToCsv(
-        Problem{
+      ToCsv({
           .buffers = {
               {.id = "0", .lifespan = {5, 10}, .size = 15},
               {
@@ -44,11 +43,46 @@ TEST(ConverterTest, ToCsv) {
       "0,5,10,15,1,\n1,6,12,18,2,7-8 9-10\n");
 }
 
+TEST(ConverterTest, ToCsvWithoutAlignment) {
+  EXPECT_EQ(
+      ToCsv({
+          .buffers = {
+              {.id = "0", .lifespan = {5, 10}, .size = 15},
+              {
+                .id = "1",
+                .lifespan = {6, 12},
+                .size = 18,
+                .gaps = {{.lifespan = {7, 8}}, {.lifespan = {9, 10}}}
+              },
+           },
+          .capacity = 40
+        }),
+      "buffer,start,end,size,gaps\n"
+      "0,5,10,15,\n1,6,12,18,7-8 9-10\n");
+}
+
+TEST(ConverterTest, ToCsvWithoutGaps) {
+  EXPECT_EQ(
+      ToCsv({
+          .buffers = {
+              {.id = "0", .lifespan = {5, 10}, .size = 15},
+              {
+                .id = "1",
+                .lifespan = {6, 12},
+                .size = 18,
+                .alignment = 2,
+              },
+           },
+          .capacity = 40
+        }),
+      "buffer,start,end,size,alignment\n"
+      "0,5,10,15,1\n1,6,12,18,2\n");
+}
+
 TEST(ConverterTest, ToCsvWithSolution) {
   Solution solution = {.offsets = {1, 21}};
   EXPECT_EQ(
-      ToCsv(
-        Problem{
+      ToCsv({
           .buffers = {
               {.id = "0", .lifespan = {5, 10}, .size = 15},
               {
@@ -68,8 +102,7 @@ TEST(ConverterTest, ToCsvWithSolution) {
 
 TEST(ConverterTest, ToCsvWeirdIDs) {
   EXPECT_EQ(
-      ToCsv(
-        Problem{
+      ToCsv({
           .buffers = {
               {.id = "10", .lifespan = {5, 10}, .size = 15},
               {
@@ -88,8 +121,7 @@ TEST(ConverterTest, ToCsvWeirdIDs) {
 
 TEST(ConverterTest, ToCsvStringIDs) {
   EXPECT_EQ(
-      ToCsv(
-        Problem{
+      ToCsv({
           .buffers = {
               {.id = "Little", .lifespan = {5, 10}, .size = 15},
               {
