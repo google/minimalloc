@@ -46,16 +46,14 @@ constexpr absl::string_view kAlignment = "alignment";
 constexpr absl::string_view kGaps = "gaps";
 
 bool IncludeAlignment(const Problem& problem) {
-  for (auto buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
-    const Buffer& buffer = problem.buffers[buffer_idx];
+  for (const Buffer& buffer : problem.buffers) {
     if (buffer.alignment != 1) return true;
   }
   return false;
 }
 
 bool IncludeGaps(const Problem& problem) {
-  for (auto buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
-    const Buffer& buffer = problem.buffers[buffer_idx];
+  for (const Buffer& buffer : problem.buffers) {
     if (!buffer.gaps.empty()) return true;
   }
   return false;
