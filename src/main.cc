@@ -31,6 +31,7 @@ limitations under the License.
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "converter.h"
+#include "minimalloc.h"
 #include "solver.h"
 #include "validator.h"
 
