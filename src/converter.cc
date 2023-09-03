@@ -17,7 +17,7 @@ limitations under the License.
 #include "converter.h"
 
 #include <cstdint>
-#include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
