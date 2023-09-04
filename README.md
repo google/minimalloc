@@ -32,11 +32,11 @@ $ ./minimalloc --capacity=12 --input=benchmarks/examples/input.12.csv --output=o
 
 <pre>
 buffer,start,end,size,offset
-b1,0,2,4,8
-b2,3,8,4,8
-b3,0,8,4,4
-b4,9,20,4,4
-b5,0,20,4,0
+b1,0,3,4,8
+b2,3,9,4,8
+b3,0,9,4,4
+b4,9,21,4,4
+b5,0,21,4,0
 </pre>
 
 ## How to cite?
