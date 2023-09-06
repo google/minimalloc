@@ -19,6 +19,7 @@ limitations under the License.
 #include <limits.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <limits>
 #include <vector>
 
