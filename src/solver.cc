@@ -20,7 +20,6 @@ limitations under the License.
 
 #include <algorithm>
 #include <limits>
-#include <ranges>
 #include <vector>
 
 #include "absl/algorithm/container.h"
