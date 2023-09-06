@@ -39,7 +39,7 @@ TEST(ConverterTest, ToCsv) {
            },
           .capacity = 40
         }),
-      "buffer,start,end,size,alignment,gaps\n"
+      "id,begin,end,size,alignment,gaps\n"
       "0,5,10,15,1,\n1,6,12,18,2,7-8 9-10\n");
 }
 
@@ -57,7 +57,7 @@ TEST(ConverterTest, ToCsvWithoutAlignment) {
            },
           .capacity = 40
         }),
-      "buffer,start,end,size,gaps\n"
+      "id,begin,end,size,gaps\n"
       "0,5,10,15,\n1,6,12,18,7-8 9-10\n");
 }
 
@@ -75,7 +75,7 @@ TEST(ConverterTest, ToCsvWithoutGaps) {
            },
           .capacity = 40
         }),
-      "buffer,start,end,size,alignment\n"
+      "id,begin,end,size,alignment\n"
       "0,5,10,15,1\n1,6,12,18,2\n");
 }
 
@@ -96,7 +96,7 @@ TEST(ConverterTest, ToCsvWithSolution) {
           .capacity = 40
         },
         &solution),
-      "buffer,start,end,size,alignment,gaps,offset\n"
+      "id,begin,end,size,alignment,gaps,offset\n"
       "0,5,10,15,1,,1\n1,6,12,18,2,7-8 9-10,21\n");
 }
 
@@ -115,7 +115,7 @@ TEST(ConverterTest, ToCsvWeirdIDs) {
            },
           .capacity = 40
         }),
-      "buffer,start,end,size,alignment,gaps\n"
+      "id,begin,end,size,alignment,gaps\n"
       "10,5,10,15,1,\n20,6,12,18,2,7-8 9-10\n");
 }
 
@@ -134,13 +134,13 @@ TEST(ConverterTest, ToCsvStringIDs) {
            },
           .capacity = 40
         }),
-      "buffer,start,end,size,alignment,gaps\n"
+      "id,begin,end,size,alignment,gaps\n"
       "Little,5,10,15,1,\nBig,6,12,18,2,7-8 9-10\n");
 }
 
 TEST(ConverterTest, FromCsvProblemOnly) {
   EXPECT_EQ(
-      *FromCsv("start,size,buffer,end\n6,18,1,12\n5,15,0,10\n"),
+      *FromCsv("begin,size,id,end\n6,18,1,12\n5,15,0,10\n"),
       (Problem{
         .buffers = {
             {.id = "1", .lifespan = {6, 12}, .size = 18},
@@ -162,7 +162,7 @@ TEST(ConverterTest, FromCsvWithAlignment) {
 
 TEST(ConverterTest, FromCsvWithEmptyGaps) {
   EXPECT_THAT(
-      *FromCsv("start,size,buffer,end,alignment,gaps\n"
+      *FromCsv("start,size,buffer_id,end,alignment,gaps\n"
               "6,18,1,12,2,\n5,15,0,10,1,\n"),
       (Problem{
         .buffers = {

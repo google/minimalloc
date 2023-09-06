@@ -36,14 +36,16 @@ namespace minimalloc {
 
 namespace {
 
-constexpr absl::string_view kBufferId = "buffer_id";
-constexpr absl::string_view kBuffer = "buffer";
-constexpr absl::string_view kStart = "start";
-constexpr absl::string_view kEnd = "end";
-constexpr absl::string_view kSize = "size";
-constexpr absl::string_view kOffset = "offset";
 constexpr absl::string_view kAlignment = "alignment";
+constexpr absl::string_view kBegin = "begin";
+constexpr absl::string_view kBuffer = "buffer";
+constexpr absl::string_view kBufferId = "buffer_id";
+constexpr absl::string_view kEnd = "end";
 constexpr absl::string_view kGaps = "gaps";
+constexpr absl::string_view kId = "id";
+constexpr absl::string_view kOffset = "offset";
+constexpr absl::string_view kSize = "size";
+constexpr absl::string_view kStart = "start";
 
 bool IncludeAlignment(const Problem& problem) {
   for (const Buffer& buffer : problem.buffers) {
@@ -64,8 +66,8 @@ bool IncludeGaps(const Problem& problem) {
 std::string ToCsv(const Problem& problem, Solution* solution) {
   const bool include_alignment = IncludeAlignment(problem);
   const bool include_gaps = IncludeGaps(problem);
-  std::vector<std::string> header = {std::string(kBuffer),
-                                     std::string(kStart),
+  std::vector<std::string> header = {std::string(kId),
+                                     std::string(kBegin),
                                      std::string(kEnd),
                                      std::string(kSize)};
   if (include_alignment) {
@@ -120,13 +122,15 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input, int64_t addend) {
       for (int field_idx = 0; field_idx < fields.size(); ++field_idx) {
         // If column reads 'buffer_id', change it to 'buffer' for consistency.
         absl::string_view col_name = fields[field_idx];
-        if (col_name == kBufferId) col_name = kBuffer;
+        if (col_name == kBuffer) col_name = kId;
+        if (col_name == kBufferId) col_name = kId;
+        if (col_name == kStart) col_name = kBegin;
         col_map[col_name] = field_idx;
       }
       if (col_map.size() != fields.size()) {
         return absl::InvalidArgumentError("Duplicate column names");
       }
-      if (!col_map.contains(kBuffer) || !col_map.contains(kStart) ||
+      if (!col_map.contains(kId) || !col_map.contains(kBegin) ||
           !col_map.contains(kEnd) || !col_map.contains(kSize)) {
         return absl::NotFoundError("A required column is missing");
       }
@@ -135,11 +139,11 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input, int64_t addend) {
     if (fields.size() != col_map.size()) {
       return absl::InvalidArgumentError("Too many fields");
     }
-    const std::string& id = static_cast<std::string>(fields[col_map[kBuffer]]);
-    int64_t start = -1, end = -1, size = -1, alignment = 1;
+    const std::string& id = static_cast<std::string>(fields[col_map[kId]]);
+    int64_t begin = -1, end = -1, size = -1, alignment = 1;
     std::vector<Gap> gaps;
     std::optional<Offset> offset;
-    if (!absl::SimpleAtoi(fields[col_map[kStart]], &start) ||
+    if (!absl::SimpleAtoi(fields[col_map[kBegin]], &begin) ||
         !absl::SimpleAtoi(fields[col_map[kEnd]], &end) ||
         !absl::SimpleAtoi(fields[col_map[kSize]], &size)) {
       return absl::InvalidArgumentError("Improperly formed integer");
@@ -161,13 +165,13 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input, int64_t addend) {
           return absl::InvalidArgumentError(
               absl::StrCat("Improperly formed gap: ", gap));
         }
-        minimalloc::TimeValue gap_start, gap_end;
-        if (!absl::SimpleAtoi(gap_pair[0], &gap_start) ||
+        minimalloc::TimeValue gap_begin, gap_end;
+        if (!absl::SimpleAtoi(gap_pair[0], &gap_begin) ||
             !absl::SimpleAtoi(gap_pair[1], &gap_end)) {
             return absl::InvalidArgumentError(
                 absl::StrCat("Improperly formed gap: ", gap));
         }
-        gaps.push_back({.lifespan = {gap_start, gap_end + addend}});
+        gaps.push_back({.lifespan = {gap_begin, gap_end + addend}});
       }
     }
     if (col_map.contains(kOffset)) {
@@ -178,7 +182,7 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input, int64_t addend) {
       offset = offset_val;
     }
     problem.buffers.push_back({.id = id,
-                               .lifespan = {start, end + addend},
+                               .lifespan = {begin, end + addend},
                                .size = size,
                                .alignment = alignment,
                                .gaps = gaps,

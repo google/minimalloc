@@ -14,7 +14,7 @@ $ git clone --recursive git@github.com:google/minimalloc.git && \
 ## Example input file
 
 <pre>
-buffer,start,end,size
+id,begin,end,size
 b1,0,3,4
 b2,3,9,4
 b3,0,9,4
@@ -31,7 +31,7 @@ $ ./minimalloc --capacity=12 --input=benchmarks/examples/input.12.csv --output=o
 ## Example output file
 
 <pre>
-buffer,start,end,size,offset
+id,begin,end,size,offset
 b1,0,3,4,8
 b2,3,9,4,8
 b3,0,9,4,4
