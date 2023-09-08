@@ -39,7 +39,7 @@ TEST(ConverterTest, ToCsv) {
            },
           .capacity = 40
         }),
-      "id,begin,end,size,alignment,gaps\n"
+      "id,lower,upper,size,alignment,gaps\n"
       "0,5,10,15,1,\n1,6,12,18,2,7-8 9-10\n");
 }
 
@@ -57,7 +57,7 @@ TEST(ConverterTest, ToCsvWithoutAlignment) {
            },
           .capacity = 40
         }),
-      "id,begin,end,size,gaps\n"
+      "id,lower,upper,size,gaps\n"
       "0,5,10,15,\n1,6,12,18,7-8 9-10\n");
 }
 
@@ -75,7 +75,7 @@ TEST(ConverterTest, ToCsvWithoutGaps) {
            },
           .capacity = 40
         }),
-      "id,begin,end,size,alignment\n"
+      "id,lower,upper,size,alignment\n"
       "0,5,10,15,1\n1,6,12,18,2\n");
 }
 
@@ -96,7 +96,7 @@ TEST(ConverterTest, ToCsvWithSolution) {
           .capacity = 40
         },
         &solution),
-      "id,begin,end,size,alignment,gaps,offset\n"
+      "id,lower,upper,size,alignment,gaps,offset\n"
       "0,5,10,15,1,,1\n1,6,12,18,2,7-8 9-10,21\n");
 }
 
@@ -115,7 +115,7 @@ TEST(ConverterTest, ToCsvWeirdIDs) {
            },
           .capacity = 40
         }),
-      "id,begin,end,size,alignment,gaps\n"
+      "id,lower,upper,size,alignment,gaps\n"
       "10,5,10,15,1,\n20,6,12,18,2,7-8 9-10\n");
 }
 
@@ -134,13 +134,13 @@ TEST(ConverterTest, ToCsvStringIDs) {
            },
           .capacity = 40
         }),
-      "id,begin,end,size,alignment,gaps\n"
+      "id,lower,upper,size,alignment,gaps\n"
       "Little,5,10,15,1,\nBig,6,12,18,2,7-8 9-10\n");
 }
 
 TEST(ConverterTest, FromCsvProblemOnly) {
   EXPECT_EQ(
-      *FromCsv("begin,size,id,end\n6,18,1,12\n5,15,0,10\n"),
+      *FromCsv("lower,size,id,upper\n6,18,1,12\n5,15,0,10\n"),
       (Problem{
         .buffers = {
             {.id = "1", .lifespan = {6, 12}, .size = 18},
@@ -151,7 +151,7 @@ TEST(ConverterTest, FromCsvProblemOnly) {
 
 TEST(ConverterTest, FromCsvWithAlignment) {
   EXPECT_THAT(
-      *FromCsv("start,size,buffer,end,alignment\n6,18,1,12,2\n5,15,0,10,1\n"),
+      *FromCsv("begin,size,buffer,upper,alignment\n6,18,1,12,2\n5,15,0,10,1\n"),
       (Problem{
         .buffers = {
           {.id = "1", .lifespan = {6, 12}, .size = 18, .alignment = 2},
@@ -162,7 +162,7 @@ TEST(ConverterTest, FromCsvWithAlignment) {
 
 TEST(ConverterTest, FromCsvWithEmptyGaps) {
   EXPECT_THAT(
-      *FromCsv("start,size,buffer_id,end,alignment,gaps\n"
+      *FromCsv("start,size,buffer_id,upper,alignment,gaps\n"
               "6,18,1,12,2,\n5,15,0,10,1,\n"),
       (Problem{
         .buffers = {
@@ -174,7 +174,7 @@ TEST(ConverterTest, FromCsvWithEmptyGaps) {
 
 TEST(ConverterTest, FromCsvWithGaps) {
   EXPECT_THAT(
-      *FromCsv("start,size,buffer,end,alignment,gaps\n"
+      *FromCsv("start,size,buffer,upper,alignment,gaps\n"
               "6,18,1,12,2,7-9 \n5,15,0,10,1,9-11 12-14\n"),
       (Problem{
         .buffers = {
@@ -196,10 +196,10 @@ TEST(ConverterTest, FromCsvWithGaps) {
       }));
 }
 
-TEST(ConverterTest, FromCsvWithAddend) {
+TEST(ConverterTest, FromCsvWithEndColumn) {
   EXPECT_THAT(
       *FromCsv("start,size,buffer,end,alignment,gaps\n"
-              "6,18,1,11,2,7-8 \n5,15,0,9,1,9-10 12-13\n", 1),
+              "6,18,1,11,2,7-8 \n5,15,0,9,1,9-10 12-13\n"),
       (Problem{
         .buffers = {
           {
@@ -222,7 +222,7 @@ TEST(ConverterTest, FromCsvWithAddend) {
 
 TEST(ConverterTest, FromCsvWithSolution) {
   EXPECT_THAT(
-      *FromCsv("start,size,offset,buffer,end\n6,18,21,1,12\n5,15,1,0,10\n"),
+      *FromCsv("start,size,offset,buffer,upper\n6,18,21,1,12\n5,15,1,0,10\n"),
       (Problem{
         .buffers = {
             {.id = "1", .lifespan = {6, 12}, .size = 18, .offset = 21},
@@ -233,7 +233,7 @@ TEST(ConverterTest, FromCsvWithSolution) {
 
 TEST(ConverterTest, FromCsvBufferId) {
   EXPECT_THAT(
-      *FromCsv("start,size,buffer_id,end\n6,18,1,12\n5,15,0,10\n"),
+      *FromCsv("start,size,buffer_id,upper\n6,18,1,12\n5,15,0,10\n"),
       (Problem{
         .buffers = {
             {.id = "1", .lifespan = {6, 12}, .size = 18},
@@ -244,7 +244,7 @@ TEST(ConverterTest, FromCsvBufferId) {
 
 TEST(ConverterTest, FromCsvWeirdIDs) {
   EXPECT_THAT(
-      *FromCsv("start,size,buffer,end\n6,18,20,12\n5,15,10,10\n"),
+      *FromCsv("start,size,buffer,upper\n6,18,20,12\n5,15,10,10\n"),
       (Problem{
         .buffers = {
             {.id = "20", .lifespan = {6, 12}, .size = 18},
@@ -255,7 +255,7 @@ TEST(ConverterTest, FromCsvWeirdIDs) {
 
 TEST(ConverterTest, FromCsvStringIDs) {
   EXPECT_THAT(
-      *FromCsv("start,size,buffer,end\n6,18,Big,12\n5,15,Little,10\n"),
+      *FromCsv("start,size,buffer,upper\n6,18,Big,12\n5,15,Little,10\n"),
       (Problem{
         .buffers = {
             {.id = "Big", .lifespan = {6, 12}, .size = 18},
@@ -266,49 +266,49 @@ TEST(ConverterTest, FromCsvStringIDs) {
 
 TEST(ConverterTest, BogusInputs) {
   EXPECT_EQ(
-      FromCsv("start,size,buffer,end\n"
+      FromCsv("start,size,buffer,upper\n"
               "a,b,c,d\ne,f,g,h\n").status().code(),
       absl::StatusCode::kInvalidArgument);
 }
 
 TEST(ConverterTest, BogusOffsets) {
   EXPECT_EQ(
-      FromCsv("start,size,offset,buffer,end\n"
+      FromCsv("start,size,offset,buffer,upper\n"
               "6,18,a,1,12\n5,15,b,0,10\n").status().code(),
       absl::StatusCode::kInvalidArgument);
 }
 
 TEST(ConverterTest, BogusGaps) {
   EXPECT_EQ(
-      FromCsv("start,size,buffer,end,gaps\n"
+      FromCsv("start,size,buffer,upper,gaps\n"
               "6,18,1,12,1-2-3\n5,15,0,10,\n").status().code(),
       absl::StatusCode::kInvalidArgument);
 }
 
 TEST(ConverterTest, MoreBogusGaps) {
   EXPECT_EQ(
-      FromCsv("start,size,buffer,end,gaps\n"
+      FromCsv("start,size,buffer,upper,gaps\n"
               "6,18,1,12,A-B\n5,15,0,10,\n").status().code(),
       absl::StatusCode::kInvalidArgument);
 }
 
 TEST(ConverterTest, MissingColumn) {
   EXPECT_EQ(
-      FromCsv("start,size,end\n"
+      FromCsv("start,size,upper\n"
               "6,18,1,12\n5,15,10\n").status().code(),
       absl::StatusCode::kNotFound);
 }
 
 TEST(ConverterTest, DuplicateColumn) {
   EXPECT_EQ(
-      FromCsv("start,size,offset,buffer,end,end\n"
+      FromCsv("start,size,offset,buffer,upper,upper\n"
               "6,18,21,1,12\n5,15,1,0,10\n").status().code(),
       absl::StatusCode::kInvalidArgument);
 }
 
 TEST(ConverterTest, ExtraFields) {
   EXPECT_EQ(
-      FromCsv("start,size,offset,buffer,end\n"
+      FromCsv("start,size,offset,buffer,upper\n"
               "6,18,21,1,12\n5,15,1,0,10,100\n").status().code(),
       absl::StatusCode::kInvalidArgument);
 }
