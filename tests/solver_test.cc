@@ -31,12 +31,12 @@ namespace minimalloc {
 namespace {
 
 TEST(PreorderingComparator, ComparesCorrectly) {
-  PreorderData data_a = {.area = 1, .length = 2, .total = 3, .buffer_idx = 0};
-  PreorderData data_b = {.area = 0, .length = 1, .total = 4, .buffer_idx = 0};
-  PreorderData data_c = {.area = 0, .length = 3, .total = 3, .buffer_idx = 0};
-  PreorderData data_d = {.area = 2, .length = 2, .total = 3, .buffer_idx = 0};
-  PreorderData data_e = {.area = 1, .length = 2, .total = 3, .buffer_idx = 1};
-  PreorderingComparator preordering_comparator("TLA");
+  PreorderData data_a = {.area = 1, .total = 3, .width = 2, .buffer_idx = 0};
+  PreorderData data_b = {.area = 0, .total = 4, .width = 1, .buffer_idx = 0};
+  PreorderData data_c = {.area = 0, .total = 3, .width = 3, .buffer_idx = 0};
+  PreorderData data_d = {.area = 2, .total = 3, .width = 2, .buffer_idx = 0};
+  PreorderData data_e = {.area = 1, .total = 3, .width = 2, .buffer_idx = 1};
+  PreorderingComparator preordering_comparator("TWA");
   EXPECT_TRUE(preordering_comparator(data_b, data_a));
   EXPECT_TRUE(preordering_comparator(data_c, data_a));
   EXPECT_TRUE(preordering_comparator(data_d, data_a));
@@ -53,7 +53,7 @@ SolverParams getDisabledParams() {
     .static_preordering = false,
     .dynamic_decomposition = false,
     .monotonic_floor = false,
-    .preordering_heuristics = {"TLA"},
+    .preordering_heuristics = {"TWA"},
   };
 }
 

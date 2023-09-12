@@ -55,7 +55,7 @@ ABSL_FLAG(bool, dynamic_decomposition, true, "Dynamically decomposes buffers.");
 ABSL_FLAG(bool, monotonic_floor, true,
           "Requires the solution floor to increase monotonically.");
 
-ABSL_FLAG(std::string, preordering_heuristics, "LAT,TAL,TLA",
+ABSL_FLAG(std::string, preordering_heuristics, "WAT,TAW,TWA",
           "Static preordering heuristics to attempt.");
 
 // Solves a given problem using the Solver.

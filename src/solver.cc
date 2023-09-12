@@ -150,13 +150,13 @@ class SolverImpl {
           section_ranges.back().upper() - section_ranges.front().lower();
       preordering.push_back({
         .area = buffer.area(),
-        .sections = sections,
-        .end = buffer.lifespan.upper(),
-        .length = buffer.lifespan.upper() - buffer.lifespan.lower(),
+        .lower = buffer.lifespan.lower(),
         .overlaps = buffer_data.overlaps.size(),
-        .start = buffer.lifespan.lower(),
-        .total = total,
+        .sections = sections,
         .size = buffer.size,
+        .total = total,
+        .upper = buffer.lifespan.upper(),
+        .width = buffer.lifespan.upper() - buffer.lifespan.lower(),
         .buffer_idx = buffer_idx});
     }
     if (params_.static_preordering) {
@@ -463,11 +463,11 @@ bool PreorderingComparator::operator()(
   for (const char &c : preordering_heuristic_) {
     if (c == 'A' && a.area != b.area) return a.area > b.area;
     if (c == 'C' && a.sections != b.sections) return a.sections > b.sections;
-    if (c == 'E' && a.end != b.end) return a.end > b.end;
-    if (c == 'L' && a.length != b.length) return a.length > b.length;
+    if (c == 'L' && a.lower != b.lower) return a.lower > b.lower;
     if (c == 'O' && a.overlaps != b.overlaps) return a.overlaps > b.overlaps;
-    if (c == 'S' && a.start != b.start) return a.start > b.start;
     if (c == 'T' && a.total != b.total) return a.total > b.total;
+    if (c == 'U' && a.upper != b.upper) return a.upper > b.upper;
+    if (c == 'W' && a.width != b.width) return a.width > b.width;
     if (c == 'Z' && a.size != b.size) return a.size > b.size;
   }
   return a.buffer_idx < b.buffer_idx;
