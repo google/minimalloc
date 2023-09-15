@@ -49,6 +49,14 @@ bool Partition::operator==(const Partition& x) const {
       && section_range == x.section_range;
 }
 
+bool Overlap::operator==(const Overlap& x) const {
+  return buffer_idx == x.buffer_idx;
+}
+
+bool Overlap::operator<(const Overlap& x) const {
+  return buffer_idx < x.buffer_idx;
+}
+
 bool BufferData::operator==(const BufferData& x) const {
   return section_ranges == x.section_ranges
       && overlaps == x.overlaps;
@@ -122,8 +130,8 @@ SweepResult Sweep(const Problem& problem) {
       result.partitions.back().buffer_idxs.push_back(point.buffer_idx);
     }
     for (auto active : actives) {
-      result.buffer_data[active].overlaps.insert(point.buffer_idx);
-      result.buffer_data[point.buffer_idx].overlaps.insert(active);
+      result.buffer_data[active].overlaps.insert({point.buffer_idx});
+      result.buffer_data[point.buffer_idx].overlaps.insert({active});
     }
     actives.insert(point.buffer_idx);
     // Mutants OK for following line; performance tweak to prevent re-insertion.

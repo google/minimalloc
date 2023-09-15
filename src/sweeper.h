@@ -98,6 +98,14 @@ struct Partition {
   bool operator==(const Partition& x) const;
 };
 
+// Details regarding a buffer that overlaps with another.
+struct Overlap {
+  BufferIdx buffer_idx = -1;
+
+  bool operator==(const Overlap& x) const;
+  bool operator<(const Overlap& x) const;
+};
+
 // The BufferData object stores various preprocessed attributes of an individual
 // buffer (i.e., its relationships with sections and any overlapping buffers).
 // Given the above example, buffer 2 is active from section 0 up to (but not
@@ -116,7 +124,7 @@ struct BufferData {
   std::vector<SectionRange> section_ranges;
 
   // Contains a set of buffers that overlap at some point in time with this one.
-  absl::btree_set<BufferIdx> overlaps;
+  absl::btree_set<Overlap> overlaps;
 
   bool operator==(const BufferData& x) const;
 };

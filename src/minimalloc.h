@@ -52,9 +52,11 @@ using Offset = int64_t;  // A memory address (eg in bytes) assigned to a buffer.
 using TimeValue = int64_t;  // An abstract unitless start/end time of a buffer.
 using Area = int64_t;  // The unitless product of a buffer's length and size.
 using Lifespan = Interval<TimeValue>;
+using Window = Interval<Offset>;
 
 struct Gap {
   Lifespan lifespan;  // The interval where this gap applies.
+  std::optional<Window> window;  // The space (if any) consumed within this gap.
   bool operator==(const Gap& x) const;
 };
 

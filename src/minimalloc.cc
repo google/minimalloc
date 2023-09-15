@@ -26,7 +26,7 @@ limitations under the License.
 namespace minimalloc {
 
 bool Gap::operator==(const Gap& x) const {
-  return lifespan == x.lifespan;
+  return lifespan == x.lifespan && window == x.window;
 }
 
 bool Buffer::operator==(const Buffer& x) const {
