@@ -34,13 +34,14 @@ TEST(ConverterTest, ToCsv) {
                 .lifespan = {6, 12},
                 .size = 18,
                 .alignment = 2,
-                .gaps = {{.lifespan = {7, 8}}, {.lifespan = {9, 10}}}
+                .gaps = {{.lifespan = {7, 8}},
+                         {.lifespan = {9, 10}, .window = {{1, 17}}}}
               },
            },
           .capacity = 40
         }),
       "id,lower,upper,size,alignment,gaps\n"
-      "0,5,10,15,1,\n1,6,12,18,2,7-8 9-10\n");
+      "0,5,10,15,1,\n1,6,12,18,2,7-8 9-10@1:17\n");
 }
 
 TEST(ConverterTest, ToCsvWithoutAlignment) {
@@ -175,7 +176,7 @@ TEST(ConverterTest, FromCsvWithEmptyGaps) {
 TEST(ConverterTest, FromCsvWithGaps) {
   EXPECT_THAT(
       *FromCsv("start,size,buffer,upper,alignment,gaps\n"
-              "6,18,1,12,2,7-9 \n5,15,0,10,1,9-11 12-14\n"),
+              "6,18,1,12,2,7-9 \n5,15,0,10,1,9-11 12-14@2:13\n"),
       (Problem{
         .buffers = {
           {
@@ -190,7 +191,8 @@ TEST(ConverterTest, FromCsvWithGaps) {
             .lifespan = {5, 10},
             .size = 15,
             .alignment = 1,
-            .gaps = {{.lifespan = {9, 11}}, {.lifespan = {12, 14}}}
+            .gaps = {{.lifespan = {9, 11}},
+                     {.lifespan = {12, 14}, .window = {{2, 13}}}}
           },
         },
       }));

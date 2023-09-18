@@ -89,8 +89,13 @@ std::string ToCsv(const Problem& problem, Solution* solution) {
     std::vector<std::string> gaps;
     gaps.reserve(buffer.gaps.size());
     for (const Gap& gap : buffer.gaps) {
-      gaps.push_back(
-          absl::StrCat(gap.lifespan.lower(), "-", gap.lifespan.upper()));
+      std::string gap_str =
+          absl::StrCat(gap.lifespan.lower(), "-", gap.lifespan.upper());
+      if (gap.window) {
+        gap_str +=
+            absl::StrCat("@", gap.window->lower(), ":", gap.window->upper());
+      }
+      gaps.push_back(gap_str);
     }
     std::vector<std::string> record = {absl::StrCat(buffer.id),
                                        absl::StrCat(lifespan.lower()),
@@ -149,14 +154,13 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input) {
       return absl::InvalidArgumentError("Too many fields");
     }
     const std::string& id = static_cast<std::string>(fields[col_map[kId]]);
-    int64_t lower = -1, upper = -1, size = -1, alignment = 1;
-    std::vector<Gap> gaps;
-    std::optional<Offset> offset;
+    int64_t lower = -1, upper = -1, size = -1;
     if (!absl::SimpleAtoi(fields[col_map[kLower]], &lower) ||
         !absl::SimpleAtoi(fields[col_map[kUpper]], &upper) ||
         !absl::SimpleAtoi(fields[col_map[kSize]], &size)) {
       return absl::InvalidArgumentError("Improperly formed integer");
     }
+    int64_t alignment = 1;
     if (col_map.contains(kAlignment)) {
       if (!absl::SimpleAtoi(fields[col_map[kAlignment]], &alignment)) {
         return absl::InvalidArgumentError(
@@ -164,12 +168,18 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input) {
                          fields[col_map[kAlignment]]));
       }
     }
+    std::vector<Gap> gaps;
     if (col_map.contains(kGaps)) {
       absl::string_view gaps_str = fields[col_map[kGaps]];
       std::vector<absl::string_view> gaps_list =
           absl::StrSplit(gaps_str, ' ', absl::SkipEmpty());
       for (absl::string_view gap : gaps_list) {
-        std::vector<absl::string_view> gap_pair = absl::StrSplit(gap, '-');
+        std::vector<absl::string_view> at = absl::StrSplit(gap, '@');
+        if (at.empty()) {
+          return absl::InvalidArgumentError(
+              absl::StrCat("Improperly formed gap: ", gap));
+        }
+        std::vector<absl::string_view> gap_pair = absl::StrSplit(at[0], '-');
         if (gap_pair.size() != 2) {
           return absl::InvalidArgumentError(
               absl::StrCat("Improperly formed gap: ", gap));
@@ -180,9 +190,26 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input) {
             return absl::InvalidArgumentError(
                 absl::StrCat("Improperly formed gap: ", gap));
         }
-        gaps.push_back({.lifespan = {gap_lower, gap_upper + addend}});
+        std::optional<minimalloc::Window> window;
+        if (at.size() > 1) {
+          std::vector<absl::string_view> at_pair = absl::StrSplit(at[1], ':');
+          if (at_pair.size() != 2) {
+            return absl::InvalidArgumentError(
+                absl::StrCat("Improperly formed gap: ", gap));
+          }
+          int64_t window_lower, window_upper;
+          if (!absl::SimpleAtoi(at_pair[0], &window_lower) ||
+              !absl::SimpleAtoi(at_pair[1], &window_upper)) {
+              return absl::InvalidArgumentError(
+                  absl::StrCat("Improperly formed gap: ", gap));
+          }
+          window = {window_lower, window_upper};
+        }
+        gaps.push_back({.lifespan = {gap_lower, gap_upper + addend},
+                        .window = window});
       }
     }
+    std::optional<Offset> offset;
     if (col_map.contains(kOffset)) {
       int offset_val = -1;
       if (!absl::SimpleAtoi(fields[col_map[kOffset]], &offset_val)) {
