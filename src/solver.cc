@@ -232,7 +232,6 @@ class SolverImpl {
       BufferIdx buffer_idx,
       absl::flat_hash_set<SectionIdx>& affected_sections) {
     std::vector<OffsetChange> offset_changes;
-    const Buffer& buffer = problem_.buffers[buffer_idx];
     const Offset offset = assignment_.offsets[buffer_idx];
     // For any overlap this buffer participates in, bump up its minimum offset.
     const std::vector<BufferData>& buffer_data = sweep_result_.buffer_data;
