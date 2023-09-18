@@ -32,17 +32,15 @@ struct Point {
   BufferIdx buffer_idx;
   TimeValue time_value;
   PointType point_type;
+  bool operator<(const Point& x) const {
+    // First, order by time, then direction (right vs. left), then buffer idx.
+    if (time_value != x.time_value) return time_value < x.time_value;
+    if (point_type != x.point_type) return point_type < x.point_type;
+    return buffer_idx < x.buffer_idx;
+  }
 };
 
 }  // namespace
-
-// First, order by time, then direction (right vs. left), then buffer idx.
-const auto kPointComparator =
-    [](const Point& a, const Point& b) {
-      if (a.time_value != b.time_value) return a.time_value < b.time_value;
-      if (a.point_type != b.point_type) return a.point_type < b.point_type;
-      return a.buffer_idx < b.buffer_idx;
-    };
 
 bool Partition::operator==(const Partition& x) const {
   return buffer_idxs == x.buffer_idxs
@@ -94,7 +92,7 @@ SweepResult Sweep(const Problem& problem) {
                       .time_value = buffer.lifespan.upper(),
                       .point_type = PointType::kRight});
   }
-  std::sort(points.begin(), points.end(), kPointComparator);
+  std::sort(points.begin(), points.end());
   Section actives, alive;
   TimeValue last_section_time = -1;
   SectionIdx last_section_idx = 0;

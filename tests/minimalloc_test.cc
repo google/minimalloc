@@ -89,6 +89,16 @@ TEST(BufferTest, EffectiveSizeGapsWithoutOverlapEdgeCaseSecond) {
   EXPECT_EQ(bufferB.effective_size(bufferA), std::nullopt);
 }
 
+TEST(BufferTest, EffectiveSizeTetris) {
+  const Buffer bufferA = {.lifespan = {0, 10},
+                          .size = 2,
+                          .gaps = {{.lifespan = {0, 5}, .window = {{0, 1}}}}};
+  const Buffer bufferB = {.lifespan = {0, 10},
+                          .size = 2,
+                          .gaps = {{.lifespan = {5, 10}, .window = {{1, 2}}}}};
+  EXPECT_EQ(bufferA.effective_size(bufferB), 1);
+}
+
 TEST(ProblemTest, StripSolutionOk) {
   Problem problem = {
     .buffers = {

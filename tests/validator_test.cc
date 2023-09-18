@@ -63,6 +63,21 @@ TEST(ValidatorTest, ValidatesGoodSolutionWithGapsEdgeCase) {
   EXPECT_EQ(Validate(problem, solution), kGood);
 }
 
+TEST(ValidatorTest, ValidatesTetris) {
+  Problem problem = {
+    .buffers = {
+        {.lifespan = {0, 10}, .size = 2, .gaps = {{.lifespan = {0, 5},
+                                                   .window = {{0, 1}}}}},
+        {.lifespan = {0, 10}, .size = 2, .gaps = {{.lifespan = {5, 10},
+                                                   .window = {{1, 2}}}}},
+     },
+    .capacity = 3
+  };
+  // right # of offsets, in range, no overlaps
+  Solution solution = {.offsets = {0, 1}};
+  EXPECT_EQ(Validate(problem, solution), kGood);
+}
+
 TEST(ValidatorTest, InvalidatesBadSolution) {
   Problem problem = {
       .buffers = {
