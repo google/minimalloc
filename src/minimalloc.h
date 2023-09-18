@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef MINIMALLOC_H_
-#define MINIMALLOC_H_
+#ifndef MINIMALLOC_SRC_MINIMALLOC_H_
+#define MINIMALLOC_SRC_MINIMALLOC_H_
 
 #include <stdint.h>
 
@@ -92,4 +92,4 @@ struct Problem {
 
 }  // namespace minimalloc
 
-#endif  // MINIMALLOC_H_
+#endif  // MINIMALLOC_SRC_MINIMALLOC_H_

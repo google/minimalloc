@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef MINIMALLOC_CONVERTER_H_
-#define MINIMALLOC_CONVERTER_H_
+#ifndef MINIMALLOC_SRC_CONVERTER_H_
+#define MINIMALLOC_SRC_CONVERTER_H_
 
 #include <cstdint>
 #include <string>
@@ -50,4 +50,4 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input);
 
 }  // namespace minimalloc
 
-#endif  // MINIMALLOC_CONVERTER_H_
+#endif  // MINIMALLOC_SRC_CONVERTER_H_

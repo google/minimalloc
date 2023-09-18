@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef MINIMALLOC_SOLVER_H_
-#define MINIMALLOC_SOLVER_H_
+#ifndef MINIMALLOC_SRC_SOLVER_H_
+#define MINIMALLOC_SRC_SOLVER_H_
 
 #include "minimalloc.h"
 #include "absl/status/statusor.h"
@@ -119,4 +119,4 @@ class Solver {
 
 }  // namespace minimalloc
 
-#endif  // MINIMALLOC_SOLVER_H_
+#endif  // MINIMALLOC_SRC_SOLVER_H_

@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef MINIMALLOC_VALIDATOR_H_
-#define MINIMALLOC_VALIDATOR_H_
+#ifndef MINIMALLOC_SRC_VALIDATOR_H_
+#define MINIMALLOC_SRC_VALIDATOR_H_
 
 #include "minimalloc.h"
 #include "absl/base/attributes.h"
@@ -38,4 +38,4 @@ ValidationResult Validate(
 
 }  // namespace minimalloc
 
-#endif  // MINIMALLOC_VALIDATOR_H_
+#endif  // MINIMALLOC_SRC_VALIDATOR_H_

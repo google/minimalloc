@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef MINIMALLOC_SWEEPER_H_
-#define MINIMALLOC_SWEEPER_H_
+#ifndef MINIMALLOC_SRC_SWEEPER_H_
+#define MINIMALLOC_SRC_SWEEPER_H_
 
 #include <vector>
 
@@ -155,4 +155,4 @@ SweepResult Sweep(const Problem& problem);
 
 }  // namespace minimalloc
 
-#endif  // MINIMALLOC_SWEEPER_H_
+#endif  // MINIMALLOC_SRC_SWEEPER_H_
