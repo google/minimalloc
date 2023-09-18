@@ -184,13 +184,13 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input) {
           return absl::InvalidArgumentError(
               absl::StrCat("Improperly formed gap: ", gap));
         }
-        minimalloc::TimeValue gap_lower, gap_upper;
+        TimeValue gap_lower, gap_upper;
         if (!absl::SimpleAtoi(gap_pair[0], &gap_lower) ||
             !absl::SimpleAtoi(gap_pair[1], &gap_upper)) {
             return absl::InvalidArgumentError(
                 absl::StrCat("Improperly formed gap: ", gap));
         }
-        std::optional<minimalloc::Window> window;
+        std::optional<Window> window;
         if (at.size() > 1) {
           std::vector<absl::string_view> at_pair = absl::StrSplit(at[1], ':');
           if (at_pair.size() != 2) {
