@@ -71,6 +71,7 @@ add_test(NAME sweeper_test COMMAND sweeper_test)
 
 add_executable(validator_test
   tests/validator_test.cc
+  src/minimalloc.cc
   src/validator.cc
 )
 target_link_libraries(validator_test

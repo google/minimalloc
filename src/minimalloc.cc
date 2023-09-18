@@ -25,6 +25,14 @@ limitations under the License.
 
 namespace minimalloc {
 
+namespace {
+
+enum PointType { kRight, kLeft };
+
+using Point = std::pair<TimeValue, PointType>;
+
+}  // namespace
+
 bool Gap::operator==(const Gap& x) const {
   return lifespan == x.lifespan && window == x.window;
 }
@@ -49,6 +57,31 @@ bool Problem::operator==(const Problem& x) const {
 
 Area Buffer::area() const {
   return size * (lifespan.upper() - lifespan.lower());
+}
+
+std::optional<int64_t> Buffer::effective_size(const Buffer& x) const {
+  if (lifespan.upper() <= x.lifespan.lower()) return std::nullopt;
+  if (x.lifespan.upper() <= lifespan.lower()) return std::nullopt;
+  std::vector<Point> points = {
+    {lifespan.lower(), PointType::kLeft},
+    {lifespan.upper(), PointType::kRight},
+    {x.lifespan.lower(), PointType::kLeft},
+    {x.lifespan.upper(), PointType::kRight}};
+  for (const Gap& gap : gaps) {
+    points.push_back({gap.lifespan.lower(), PointType::kRight});
+    points.push_back({gap.lifespan.upper(), PointType::kLeft});
+  }
+  for (const Gap& gap : x.gaps) {
+    points.push_back({gap.lifespan.lower(), PointType::kRight});
+    points.push_back({gap.lifespan.upper(), PointType::kLeft});
+  }
+  std::sort(points.begin(), points.end());
+  int actives = 0;
+  for (const Point& point : points) {
+    actives += (point.second == PointType::kLeft) ? 1 : -1;
+    if (actives > 1) return size;
+  }
+  return std::nullopt;
 }
 
 absl::StatusOr<Solution> Problem::strip_solution() {

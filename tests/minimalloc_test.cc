@@ -26,6 +26,69 @@ limitations under the License.
 namespace minimalloc {
 namespace {
 
+TEST(BufferTest, EffectiveSizeWithOverlap) {
+  const Buffer bufferA = {.lifespan = {0, 2}, .size = 4};
+  const Buffer bufferB = {.lifespan = {1, 3}, .size = 5};
+  EXPECT_EQ(bufferA.effective_size(bufferB), 4);
+  EXPECT_EQ(bufferB.effective_size(bufferA), 5);
+}
+
+TEST(BufferTest, EffectiveSizeWithoutOverlap) {
+  const Buffer bufferA = {.lifespan = {0, 2}, .size = 4};
+  const Buffer bufferB = {.lifespan = {3, 5}, .size = 5};
+  EXPECT_EQ(bufferA.effective_size(bufferB), std::nullopt);
+  EXPECT_EQ(bufferB.effective_size(bufferA), std::nullopt);
+}
+
+TEST(BufferTest, EffectiveSizeWithoutOverlapEdgeCase) {
+  const Buffer bufferA = {.lifespan = {0, 2}, .size = 4};
+  const Buffer bufferB = {.lifespan = {2, 4}, .size = 5};
+  EXPECT_EQ(bufferA.effective_size(bufferB), std::nullopt);
+  EXPECT_EQ(bufferB.effective_size(bufferA), std::nullopt);
+}
+
+TEST(BufferTest, EffectiveSizeGapsWithOverlap) {
+  const Buffer bufferA = {.lifespan = {0, 10},
+                          .size = 4,
+                          .gaps = {{.lifespan = {1, 4}},
+                                   {.lifespan = {6, 9}}}};
+  const Buffer bufferB = {.lifespan = {5, 15},
+                          .size = 5,
+                          .gaps = {{.lifespan = {6, 9}},
+                                   {.lifespan = {11, 14}}}};
+  EXPECT_EQ(bufferA.effective_size(bufferB), 4);
+  EXPECT_EQ(bufferB.effective_size(bufferA), 5);
+}
+
+TEST(BufferTest, EffectiveSizeGapsWithoutOverlap) {
+  const Buffer bufferA = {.lifespan = {0, 10},
+                          .size = 4,
+                          .gaps = {{.lifespan = {1, 9}}}};
+  const Buffer bufferB = {.lifespan = {5, 15},
+                          .size = 5,
+                          .gaps = {{.lifespan = {6, 14}}}};
+  EXPECT_EQ(bufferA.effective_size(bufferB), std::nullopt);
+  EXPECT_EQ(bufferB.effective_size(bufferA), std::nullopt);
+}
+
+TEST(BufferTest, EffectiveSizeGapsWithoutOverlapEdgeCaseFirst) {
+  const Buffer bufferA = {.lifespan = {0, 10}, .size = 4};
+  const Buffer bufferB = {.lifespan = {5, 15},
+                          .size = 5,
+                          .gaps = {{.lifespan = {5, 10}}}};
+  EXPECT_EQ(bufferA.effective_size(bufferB), std::nullopt);
+  EXPECT_EQ(bufferB.effective_size(bufferA), std::nullopt);
+}
+
+TEST(BufferTest, EffectiveSizeGapsWithoutOverlapEdgeCaseSecond) {
+  const Buffer bufferA = {.lifespan = {0, 10},
+                          .size = 4,
+                          .gaps = {{.lifespan = {5, 10}}}};
+  const Buffer bufferB = {.lifespan = {5, 15}, .size = 5};
+  EXPECT_EQ(bufferA.effective_size(bufferB), std::nullopt);
+  EXPECT_EQ(bufferB.effective_size(bufferA), std::nullopt);
+}
+
 TEST(ProblemTest, StripSolutionOk) {
   Problem problem = {
     .buffers = {

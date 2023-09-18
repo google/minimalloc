@@ -67,7 +67,15 @@ struct Buffer {
   int64_t alignment = 1;  // The lowest common denominator of assigned offsets.
   std::vector<Gap> gaps;  // Slots where this buffer is inactive.
   std::optional<Offset> offset;  // If present, the fixed pos. of this buffer.
-  Area area() const;  // The product of this buffer's size and lifespan length.
+
+  // The product of this buffer's size and lifespan length.
+  Area area() const;
+
+  // The size assuming that buffer 'x' needs to be placed directly above.  Might
+  // be small if the windows of our gaps are low (or, if the windows of their
+  // gaps are high).  Might even be absent if the gaps line up "just so."
+  std::optional<int64_t> effective_size(const Buffer& x) const;
+
   bool operator==(const Buffer& x) const;
 };
 

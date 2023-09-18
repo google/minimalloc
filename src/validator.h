@@ -31,8 +31,6 @@ enum ValidationResult {
   kBadAlignment = 5  // At least one buffer was not properly aligned.
 };
 
-bool Overlaps(const Buffer& b1, const Buffer& b2);
-
 ValidationResult Validate(
     const Problem& problem, const Solution& solution) ABSL_MUST_USE_RESULT;
 

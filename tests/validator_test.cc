@@ -22,57 +22,6 @@ limitations under the License.
 namespace minimalloc {
 namespace {
 
-TEST(OverlapsTest, WithOverlap) {
-  Buffer bufferA = {.lifespan = {0, 2}};
-  Buffer bufferB = {.lifespan = {1, 3}};
-  EXPECT_TRUE(Overlaps(bufferA, bufferB));
-  EXPECT_TRUE(Overlaps(bufferB, bufferA));
-}
-
-TEST(OverlapsTest, WithoutOverlap) {
-  Buffer bufferA = {.lifespan = {0, 2}};
-  Buffer bufferB = {.lifespan = {3, 5}};
-  EXPECT_FALSE(Overlaps(bufferA, bufferB));
-  EXPECT_FALSE(Overlaps(bufferB, bufferA));
-}
-
-TEST(OverlapsTest, WithoutOverlapEdgeCase) {
-  Buffer bufferA = {.lifespan = {0, 2}};
-  Buffer bufferB = {.lifespan = {2, 4}};
-  EXPECT_FALSE(Overlaps(bufferA, bufferB));
-  EXPECT_FALSE(Overlaps(bufferB, bufferA));
-}
-
-TEST(OverlapsTest, GapsWithOverlap) {
-  Buffer bufferA = {.lifespan = {0, 10}, .gaps = {{.lifespan = {1, 4}},
-                                                  {.lifespan = {6, 9}}}};
-  Buffer bufferB = {.lifespan = {5, 15}, .gaps = {{.lifespan = {6, 9}},
-                                                  {.lifespan = {11, 14}}}};
-  EXPECT_TRUE(Overlaps(bufferA, bufferB));
-  EXPECT_TRUE(Overlaps(bufferB, bufferA));
-}
-
-TEST(OverlapsTest, GapsWithoutOverlap) {
-  Buffer bufferA = {.lifespan = {0, 10}, .gaps = {{.lifespan = {1, 9}}}};
-  Buffer bufferB = {.lifespan = {5, 15}, .gaps = {{.lifespan = {6, 14}}}};
-  EXPECT_FALSE(Overlaps(bufferA, bufferB));
-  EXPECT_FALSE(Overlaps(bufferB, bufferA));
-}
-
-TEST(OverlapsTest, GapsWithoutOverlapEdgeCaseFirst) {
-  Buffer bufferA = {.lifespan = {0, 10}};
-  Buffer bufferB = {.lifespan = {5, 15}, .gaps = {{.lifespan = {5, 10}}}};
-  EXPECT_FALSE(Overlaps(bufferA, bufferB));
-  EXPECT_FALSE(Overlaps(bufferB, bufferA));
-}
-
-TEST(OverlapsTest, GapsWithoutOverlapEdgeCaseSecond) {
-  Buffer bufferA = {.lifespan = {0, 10}, .gaps = {{.lifespan = {5, 10}}}};
-  Buffer bufferB = {.lifespan = {5, 15}};
-  EXPECT_FALSE(Overlaps(bufferA, bufferB));
-  EXPECT_FALSE(Overlaps(bufferB, bufferA));
-}
-
 TEST(ValidatorTest, ValidatesGoodSolution) {
   Problem problem = {
     .buffers = {

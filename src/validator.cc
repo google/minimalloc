@@ -25,39 +25,6 @@ limitations under the License.
 
 namespace minimalloc {
 
-namespace {
-
-enum PointType { kRight, kLeft };
-
-using Point = std::pair<TimeValue, PointType>;
-
-}  // namespace
-
-bool Overlaps(const Buffer& b1, const Buffer& b2) {
-  if (b1.lifespan.upper() <= b2.lifespan.lower()) return false;
-  if (b2.lifespan.upper() <= b1.lifespan.lower()) return false;
-  std::vector<Point> points = {
-    {b1.lifespan.lower(), PointType::kLeft},
-    {b1.lifespan.upper(), PointType::kRight},
-    {b2.lifespan.lower(), PointType::kLeft},
-    {b2.lifespan.upper(), PointType::kRight}};
-  for (const Gap& gap : b1.gaps) {
-    points.push_back({gap.lifespan.lower(), PointType::kRight});
-    points.push_back({gap.lifespan.upper(), PointType::kLeft});
-  }
-  for (const Gap& gap : b2.gaps) {
-    points.push_back({gap.lifespan.lower(), PointType::kRight});
-    points.push_back({gap.lifespan.upper(), PointType::kLeft});
-  }
-  std::sort(points.begin(), points.end());
-  int actives = 0;
-  for (const Point& point : points) {
-    actives += (point.second == PointType::kLeft) ? 1 : -1;
-    if (actives > 1) return true;
-  }
-  return false;
-}
-
 ValidationResult Validate(const Problem& problem, const Solution& solution) {
   // Check that the number of buffers matches the number of offsets.
   if (problem.buffers.size() != solution.offsets.size()) return kBadSolution;
@@ -77,11 +44,11 @@ ValidationResult Validate(const Problem& problem, const Solution& solution) {
     for (BufferIdx j = i + 1; j < problem.buffers.size(); ++j) {
       const Buffer& buffer_j = problem.buffers[j];
       const Offset offset_j = solution.offsets[j];
-      if (offset_i + buffer_i.size <= offset_j ||
-          offset_j + buffer_j.size <= offset_i) {
-        continue;
-      }
-      if (Overlaps(buffer_i, buffer_j)) return kBadOverlap;
+      const auto buffer_i_size = buffer_i.effective_size(buffer_j);
+      const auto buffer_j_size = buffer_j.effective_size(buffer_i);
+      if (!buffer_i_size || offset_i + *buffer_i_size <= offset_j) continue;
+      if (!buffer_j_size || offset_j + *buffer_j_size <= offset_i) continue;
+      return kBadOverlap;
     }
   }
   return kGood;
