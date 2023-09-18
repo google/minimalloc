@@ -43,27 +43,28 @@ struct Point {
 }  // namespace
 
 bool Partition::operator==(const Partition& x) const {
-  return buffer_idxs == x.buffer_idxs
-      && section_range == x.section_range;
+  return buffer_idxs == x.buffer_idxs &&
+         section_range == x.section_range;
 }
 
 bool Overlap::operator==(const Overlap& x) const {
-  return buffer_idx == x.buffer_idx;
+  return buffer_idx == x.buffer_idx && effective_size == x.effective_size;
 }
 
 bool Overlap::operator<(const Overlap& x) const {
-  return buffer_idx < x.buffer_idx;
+  if (buffer_idx != x.buffer_idx) return buffer_idx < x.buffer_idx;
+  return effective_size < x.effective_size;
 }
 
 bool BufferData::operator==(const BufferData& x) const {
-  return section_ranges == x.section_ranges
-      && overlaps == x.overlaps;
+  return section_ranges == x.section_ranges &&
+         overlaps == x.overlaps;
 }
 
 bool SweepResult::operator==(const SweepResult& x) const {
   return sections == x.sections &&
-      partitions == x.partitions &&
-      buffer_data == x.buffer_data;
+         partitions == x.partitions &&
+         buffer_data == x.buffer_data;
 }
 
 // For a given problem, places all buffer start times into a priority queue.
@@ -127,9 +128,19 @@ SweepResult Sweep(const Problem& problem) {
     if (point_type == PointType::kLeft) {
       result.partitions.back().buffer_idxs.push_back(point.buffer_idx);
     }
-    for (auto active : actives) {
-      result.buffer_data[active].overlaps.insert({point.buffer_idx});
-      result.buffer_data[point.buffer_idx].overlaps.insert({active});
+    const Buffer& buffer = problem.buffers[point.buffer_idx];
+    for (auto active_idx : actives) {
+      const Buffer& active = problem.buffers[active_idx];
+      auto active_effective_size = active.effective_size(buffer);
+      if (active_effective_size) {
+        result.buffer_data[active_idx].overlaps.insert(
+            {point.buffer_idx, *active_effective_size});
+      }
+      auto effective_size = buffer.effective_size(active);
+      if (effective_size) {
+        result.buffer_data[point.buffer_idx].overlaps.insert(
+            {active_idx, *effective_size});
+      }
     }
     actives.insert(point.buffer_idx);
     // Mutants OK for following line; performance tweak to prevent re-insertion.

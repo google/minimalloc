@@ -101,6 +101,7 @@ struct Partition {
 // Details regarding a buffer that overlaps with another.
 struct Overlap {
   BufferIdx buffer_idx = -1;
+  int64_t effective_size = 0;
 
   bool operator==(const Overlap& x) const;
   bool operator<(const Overlap& x) const;

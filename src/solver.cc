@@ -234,11 +234,11 @@ class SolverImpl {
     std::vector<OffsetChange> offset_changes;
     const Buffer& buffer = problem_.buffers[buffer_idx];
     const Offset offset = assignment_.offsets[buffer_idx];
-    const Offset height = offset + buffer.size;
     // For any overlap this buffer participates in, bump up its minimum offset.
     const std::vector<BufferData>& buffer_data = sweep_result_.buffer_data;
     for (const Overlap& overlap : buffer_data[buffer_idx].overlaps) {
       const BufferIdx other_idx = overlap.buffer_idx;
+      const Offset height = offset + overlap.effective_size;
       if (assignment_.offsets[other_idx] == kNoOffset) {
         if (min_offsets_[other_idx] >= height) continue;
         offset_changes.push_back(
