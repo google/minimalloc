@@ -138,16 +138,16 @@ class SolverImpl {
       const Buffer& buffer = problem_.buffers[buffer_idx];
       int total = 0;
       const BufferData& buffer_data = sweep_result_.buffer_data[buffer_idx];
-      const std::vector<SectionRange>& section_ranges =
-          buffer_data.section_ranges;
-      for (const SectionRange& section_range : section_ranges) {
+      const std::vector<SectionSpan>& section_spans = buffer_data.section_spans;
+      for (const SectionSpan& section_span : section_spans) {
+        const SectionRange& section_range = section_span.section_range;
         for (SectionIdx s_idx = section_range.lower();
             s_idx < section_range.upper(); ++s_idx) {
           total = std::max(total, section_data_[s_idx].total);
         }
       }
-      int sections =
-          section_ranges.back().upper() - section_ranges.front().lower();
+      int sections = section_spans.back().section_range.upper() -
+                     section_spans.front().section_range.lower();
       preordering.push_back({
         .area = buffer.area(),
         .lower = buffer.lifespan.lower(),
@@ -183,7 +183,8 @@ class SolverImpl {
     const Offset height = offset + buffer.size;
     // For any section this buffer resides in, bump up the floor & drop the sum.
     const BufferData& buffer_data = sweep_result_.buffer_data[buffer_idx];
-    for (const SectionRange& section_range : buffer_data.section_ranges) {
+    for (const SectionSpan& section_span : buffer_data.section_spans) {
+      const SectionRange& section_range = section_span.section_range;
       for (SectionIdx s_idx = section_range.lower();
           s_idx < section_range.upper(); ++s_idx) {
         section_changes.push_back(
@@ -219,7 +220,8 @@ class SolverImpl {
     // For any section this buffer resides in, increase the sum.
     const Buffer& buffer = problem_.buffers[buffer_idx];
     const BufferData& buffer_data = sweep_result_.buffer_data[buffer_idx];
-    for (const SectionRange& section_range : buffer_data.section_ranges) {
+    for (const SectionSpan& section_span : buffer_data.section_spans) {
+      const SectionRange& section_range = section_span.section_range;
       for (SectionIdx s_idx = section_range.lower();
           s_idx < section_range.upper(); ++s_idx) {
         section_data_[s_idx].total += buffer.min_size();
@@ -248,7 +250,8 @@ class SolverImpl {
         if (diff > 0) min_offsets_[other_idx] += other_buffer.alignment - diff;
         if (!params_.unallocated_floor) continue;  // Mutation safe.
         const BufferData& buffer_data = sweep_result_.buffer_data[other_idx];
-        for (const SectionRange& section_range : buffer_data.section_ranges) {
+        for (const SectionSpan& section_span : buffer_data.section_spans) {
+          const SectionRange& section_range = section_span.section_range;
           for (SectionIdx s_idx = section_range.lower();
                s_idx < section_range.upper(); ++s_idx) {
             affected_sections.insert(s_idx);
@@ -389,8 +392,9 @@ class SolverImpl {
     // zero-cut section indices into 'cutpoints', to be solved separately).
     std::vector<SectionIdx> cutpoints = {partition.section_range.lower()};
     const BufferData& buffer_data = sweep_result_.buffer_data[buffer_idx];
-    for (SectionIdx s_idx = buffer_data.section_ranges.front().lower();
-      s_idx + 1 < buffer_data.section_ranges.back().upper(); ++s_idx) {
+    const std::vector<SectionSpan>& section_spans = buffer_data.section_spans;
+    for (SectionIdx s_idx = section_spans.front().section_range.lower();
+      s_idx + 1 < section_spans.back().section_range.upper(); ++s_idx) {
       if (--cuts_[s_idx] == 0) cutpoints.push_back(s_idx + 1);
     }
     absl::StatusCode status_code = absl::StatusCode::kOk;
@@ -411,8 +415,8 @@ class SolverImpl {
           if (assignment_.offsets[other_idx] != kNoOffset) continue;
           const BufferData& other_data = sweep_result_.buffer_data[other_idx];
           const SectionRange other_range = {
-            other_data.section_ranges.front().lower(),
-            other_data.section_ranges.back().upper()
+            other_data.section_spans.front().section_range.lower(),
+            other_data.section_spans.back().section_range.upper()
           };
           if (!(other_range.upper() <= section_range.lower() ||
                 section_range.upper() <= other_range.lower())) {
@@ -431,8 +435,8 @@ class SolverImpl {
       }
     }
     // Restore all section cuts to their previous values.
-    for (SectionIdx s_idx = buffer_data.section_ranges.front().lower();
-        s_idx + 1 < buffer_data.section_ranges.back().upper(); ++s_idx) {
+    for (SectionIdx s_idx = section_spans.front().section_range.lower();
+        s_idx + 1 < section_spans.back().section_range.upper(); ++s_idx) {
       ++cuts_[s_idx];
     }
     return status_code;

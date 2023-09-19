@@ -42,6 +42,10 @@ struct Point {
 
 }  // namespace
 
+bool SectionSpan::operator==(const SectionSpan& x) const {
+  return section_range == x.section_range;
+}
+
 bool Partition::operator==(const Partition& x) const {
   return buffer_idxs == x.buffer_idxs &&
          section_range == x.section_range;
@@ -57,7 +61,7 @@ bool Overlap::operator<(const Overlap& x) const {
 }
 
 bool BufferData::operator==(const BufferData& x) const {
-  return section_ranges == x.section_ranges &&
+  return section_spans == x.section_spans &&
          overlaps == x.overlaps;
 }
 
@@ -112,9 +116,11 @@ SweepResult Sweep(const Problem& problem) {
       }
       actives.erase(point.buffer_idx);
       if (point_type == PointType::kRight) alive.erase(point.buffer_idx);
-      result.buffer_data[point.buffer_idx].section_ranges.push_back(
+      const SectionRange section_range =
           {buffer_idx_to_section_start[point.buffer_idx],
-           (int)result.sections.size()});
+           (int)result.sections.size()};
+      result.buffer_data[point.buffer_idx].section_spans.push_back(
+          {section_range});
       // If the alives are empty, the span of this partition is now known.
       if (alive.empty()) {
         result.partitions.back().section_range =
@@ -158,8 +164,9 @@ SweepResult Sweep(const Problem& problem) {
 std::vector<CutCount> SweepResult::CalculateCuts() const {
   std::vector<CutCount> cuts(sections.size() - 1);
   for (const BufferData& buffer_data : buffer_data) {
-    for (SectionIdx s_idx = buffer_data.section_ranges.front().lower();
-        s_idx + 1 < buffer_data.section_ranges.back().upper(); ++s_idx) {
+    const std::vector<SectionSpan>& section_spans = buffer_data.section_spans;
+    for (SectionIdx s_idx = section_spans.front().section_range.lower();
+        s_idx + 1 < section_spans.back().section_range.upper(); ++s_idx) {
       ++cuts[s_idx];
     }
   }

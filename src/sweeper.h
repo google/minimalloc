@@ -35,6 +35,12 @@ using CutCount = int;
 // continuously active).
 using SectionRange = Interval<SectionIdx>;
 
+// Defines a range that a buffer is active. TODO(moffitt): Include size as well.
+struct SectionSpan {
+  SectionRange section_range;
+  bool operator==(const SectionSpan& x) const;
+};
+
 // Sections store subsets of buffers that interact with one another at some
 // point in time.  As an example, consider the following problem:
 //
@@ -114,7 +120,7 @@ struct Overlap {
 // (0 and 1).  Hence, its buffer data would be as follows:
 //
 //     BufferData buffer_data_0 = {
-//       .section_ranges = {{0, 3}},
+//       .section_spans = {{.section_range = {0, 3}, .size = 1},
 //       .overlaps = {0, 1}
 //     };
 
@@ -122,7 +128,7 @@ struct BufferData {
   // Half-open intervals specifying an exhaustive list of sections that this
   // buffer participates in.  Note: just because a buffer is live during a
   // given section does not necessarily mean it is live for the full duration.
-  std::vector<SectionRange> section_ranges;
+  std::vector<SectionSpan> section_spans;
 
   // Contains a set of buffers that overlap at some point in time with this one.
   absl::btree_set<Overlap> overlaps;

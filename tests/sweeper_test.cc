@@ -60,9 +60,9 @@ TEST(SweeperTest, NoOverlap) {
               {.buffer_idxs = {2}, .section_range = {2, 3}},
           },
           .buffer_data = {
-              {.section_ranges = {{0, 1}}},
-              {.section_ranges = {{1, 2}}},
-              {.section_ranges = {{2, 3}}},
+              {.section_spans = {{{0, 1}}}},
+              {.section_spans = {{{1, 2}}}},
+              {.section_spans = {{{2, 3}}}},
           },
       }));
 }
@@ -71,9 +71,9 @@ TEST(CalculateCutsTest, NoOverlap) {
   const SweepResult sweep_result = {
      .sections = {{0}, {1}, {2}},
      .buffer_data = {
-         {.section_ranges = {{0, 1}}},
-         {.section_ranges = {{1, 2}}},
-         {.section_ranges = {{2, 3}}},
+         {.section_spans = {{{0, 1}}}},
+         {.section_spans = {{{1, 2}}}},
+         {.section_spans = {{{2, 3}}}},
      },
   };
   EXPECT_EQ(sweep_result.CalculateCuts(), std::vector<CutCount>({0, 0}));
@@ -113,9 +113,9 @@ TEST(SweeperTest, WithOverlap) {
               {.buffer_idxs = {1, 2}, .section_range = {1, 3}},
           },
           .buffer_data = {
-              {.section_ranges = {{0, 1}}},
-              {.section_ranges = {{1, 2}}, .overlaps = {{2, 1}}},
-              {.section_ranges = {{1, 3}}, .overlaps = {{1, 1}}},
+              {.section_spans = {{{0, 1}}}},
+              {.section_spans = {{{1, 2}}}, .overlaps = {{2, 1}}},
+              {.section_spans = {{{1, 3}}}, .overlaps = {{1, 1}}},
           },
       }));
 }
@@ -124,9 +124,9 @@ TEST(CalculateCutsTest, WithOverlap) {
   const SweepResult sweep_result = {
       .sections = {{0}, {1, 2}, {2}},
       .buffer_data = {
-          {.section_ranges = {{0, 1}}},
-          {.section_ranges = {{1, 2}}, .overlaps = {{2, 1}}},
-          {.section_ranges = {{1, 3}}, .overlaps = {{1, 1}}},
+          {.section_spans = {{{0, 1}}}},
+          {.section_spans = {{{1, 2}}}, .overlaps = {{2, 1}}},
+          {.section_spans = {{{1, 3}}}, .overlaps = {{1, 1}}},
       },
   };
   EXPECT_EQ(sweep_result.CalculateCuts(), std::vector<CutCount>({0, 1}));
@@ -166,9 +166,9 @@ TEST(SweeperTest, TwoBuffersEndAtSameTime) {
               {.buffer_idxs = {1, 2}, .section_range = {1, 2}},
           },
           .buffer_data = {
-              {.section_ranges = {{0, 1}}},
-              {.section_ranges = {{1, 2}}, .overlaps = {{2, 1}}},
-              {.section_ranges = {{1, 2}}, .overlaps = {{1, 1}}},
+              {.section_spans = {{{0, 1}}}},
+              {.section_spans = {{{1, 2}}}, .overlaps = {{2, 1}}},
+              {.section_spans = {{{1, 2}}}, .overlaps = {{1, 1}}},
           },
       }));
 }
@@ -177,9 +177,9 @@ TEST(CalculateCutsTest, TwoBuffersEndAtSameTime) {
   const SweepResult sweep_result = {
       .sections = {{0}, {1, 2}},
       .buffer_data = {
-          {.section_ranges = {{0, 1}}},
-          {.section_ranges = {{1, 2}}, .overlaps = {{2, 1}}},
-          {.section_ranges = {{1, 2}}, .overlaps = {{1, 1}}},
+          {.section_spans = {{{0, 1}}}},
+          {.section_spans = {{{1, 2}}}, .overlaps = {{2, 1}}},
+          {.section_spans = {{{1, 2}}}, .overlaps = {{1, 1}}},
       },
   };
   EXPECT_EQ(sweep_result.CalculateCuts(), std::vector<CutCount>({0}));
@@ -221,12 +221,12 @@ TEST(SweeperTest, SuperLongBufferPreventsPartitioning) {
               {.buffer_idxs = {0, 3, 1, 2}, .section_range = {0, 3}},
           },
           .buffer_data = {
-              {.section_ranges = {{0, 1}}, .overlaps = {{3, 2}}},
-              {.section_ranges = {{1, 2}}, .overlaps = {{2, 1}, {3, 1}}},
-              {.section_ranges = {{1, 3}}, .overlaps = {{1, 1}, {3, 1}}},
-              {.section_ranges = {{0, 3}}, .overlaps = {{0, 1},
-                                                        {1, 1},
-                                                        {2, 1}}},
+              {.section_spans = {{{0, 1}}}, .overlaps = {{3, 2}}},
+              {.section_spans = {{{1, 2}}}, .overlaps = {{2, 1}, {3, 1}}},
+              {.section_spans = {{{1, 3}}}, .overlaps = {{1, 1}, {3, 1}}},
+              {.section_spans = {{{0, 3}}}, .overlaps = {{0, 1},
+                                                         {1, 1},
+                                                         {2, 1}}},
           }
       }));
 }
@@ -235,10 +235,10 @@ TEST(CalculateCutsTest, SuperLongBufferPreventsPartitioning) {
   const SweepResult sweep_result = {
       .sections = {{0, 3}, {1, 3, 2}, {3, 2}},
       .buffer_data = {
-          {.section_ranges = {{0, 1}}, .overlaps = {{3, 2}}},
-          {.section_ranges = {{1, 2}}, .overlaps = {{2, 1}, {3, 1}}},
-          {.section_ranges = {{1, 3}}, .overlaps = {{1, 1}, {3, 1}}},
-          {.section_ranges = {{0, 3}}, .overlaps = {{0, 1}, {1, 1}, {2, 1}}},
+          {.section_spans = {{{0, 1}}}, .overlaps = {{3, 2}}},
+          {.section_spans = {{{1, 2}}}, .overlaps = {{2, 1}, {3, 1}}},
+          {.section_spans = {{{1, 3}}}, .overlaps = {{1, 1}, {3, 1}}},
+          {.section_spans = {{{0, 3}}}, .overlaps = {{0, 1}, {1, 1}, {2, 1}}},
       }
   };
   EXPECT_EQ(sweep_result.CalculateCuts(), std::vector<CutCount>({1, 2}));
@@ -278,9 +278,9 @@ TEST(SweeperTest, BuffersOutOfOrder) {
               {.buffer_idxs = {1, 0}, .section_range = {1, 2}},
           },
           .buffer_data = {
-              {.section_ranges = {{1, 2}}, .overlaps = {{1, 1}}},
-              {.section_ranges = {{1, 2}}, .overlaps = {{0, 1}}},
-              {.section_ranges = {{0, 1}}},
+              {.section_spans = {{{1, 2}}}, .overlaps = {{1, 1}}},
+              {.section_spans = {{{1, 2}}}, .overlaps = {{0, 1}}},
+              {.section_spans = {{{0, 1}}}},
           }
       }));
 }
@@ -289,9 +289,9 @@ TEST(CalculateCutsTest, BuffersOutOfOrder) {
   const SweepResult sweep_result = {
       .sections = {{2}, {1, 0}},
       .buffer_data = {
-          {.section_ranges = {{1, 2}}, .overlaps = {{1, 1}}},
-          {.section_ranges = {{1, 2}}, .overlaps = {{0, 1}}},
-          {.section_ranges = {{0, 1}}},
+          {.section_spans = {{{1, 2}}}, .overlaps = {{1, 1}}},
+          {.section_spans = {{{1, 2}}}, .overlaps = {{0, 1}}},
+          {.section_spans = {{{0, 1}}}},
       }
   };
   EXPECT_EQ(sweep_result.CalculateCuts(), std::vector<CutCount>({0}));
@@ -332,10 +332,10 @@ TEST(SweeperTest, WithGaps) {
               {.buffer_idxs = {0, 2, 1}, .section_range = {0, 4}},
           },
           .buffer_data = {
-              {.section_ranges = {{0, 1}, {2, 3}}, .overlaps = {{2, 1}}},
-              {.section_ranges = {{1, 2}, {3, 4}}, .overlaps = {{2, 1}}},
-              {.section_ranges = {{0, 1}, {3, 4}}, .overlaps = {{0, 1},
-                                                                {1, 1}}},
+              {.section_spans = {{{0, 1}}, {{2, 3}}}, .overlaps = {{2, 1}}},
+              {.section_spans = {{{1, 2}}, {{3, 4}}}, .overlaps = {{2, 1}}},
+              {.section_spans = {{{0, 1}}, {{3, 4}}}, .overlaps = {{0, 1},
+                                                                   {1, 1}}},
           },
       }));
 }
@@ -347,9 +347,9 @@ TEST(CalculateCutsTest, WithGaps) {
           {.buffer_idxs = {0, 2, 1}, .section_range = {0, 4}},
       },
       .buffer_data = {
-          {.section_ranges = {{0, 1}, {2, 3}}, .overlaps = {{2, 1}}},
-          {.section_ranges = {{1, 2}, {3, 4}}, .overlaps = {{2, 1}}},
-          {.section_ranges = {{0, 1}, {3, 4}}, .overlaps = {{0, 1}, {1, 1}}},
+          {.section_spans = {{{0, 1}}, {{2, 3}}}, .overlaps = {{2, 1}}},
+          {.section_spans = {{{1, 2}}, {{3, 4}}}, .overlaps = {{2, 1}}},
+          {.section_spans = {{{0, 1}}, {{3, 4}}}, .overlaps = {{0, 1}, {1, 1}}},
       },
   };
   EXPECT_EQ(sweep_result.CalculateCuts(), std::vector<CutCount>({2, 3, 2}));
@@ -392,8 +392,8 @@ TEST(SweeperTest, Tetris) {
               {.buffer_idxs = {0, 1}, .section_range = {0, 1}},
           },
           .buffer_data = {
-              {.section_ranges = {{0, 1}}, .overlaps = {{1, 1}}},
-              {.section_ranges = {{0, 1}}, .overlaps = {{0, 2}}},
+              {.section_spans = {{{0, 1}}}, .overlaps = {{1, 1}}},
+              {.section_spans = {{{0, 1}}}, .overlaps = {{0, 2}}},
           },
       }));
 }
@@ -405,8 +405,8 @@ TEST(CalculateCutsTest, Tetris) {
           {.buffer_idxs = {0, 1}, .section_range = {0, 1}},
       },
       .buffer_data = {
-          {.section_ranges = {{0, 1}}, .overlaps = {{1, 1}}},
-          {.section_ranges = {{0, 1}}, .overlaps = {{0, 2}}},
+          {.section_spans = {{{0, 1}}}, .overlaps = {{1, 1}}},
+          {.section_spans = {{{0, 1}}}, .overlaps = {{0, 2}}},
       },
   };
   EXPECT_EQ(sweep_result.CalculateCuts(), std::vector<CutCount>({}));
