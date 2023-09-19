@@ -101,7 +101,7 @@ INSTANTIATE_TEST_SUITE_P(
                        ::testing::Bool(), ::testing::Bool()));
 
 TEST_P(SolverTest, InfeasibleBufferTooBig) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {{.lifespan = {0, 2}, .size = 3}},
     .capacity = 2
   };
@@ -109,7 +109,7 @@ TEST_P(SolverTest, InfeasibleBufferTooBig) {
 }
 
 TEST_P(SolverTest, InfeasibleTrivial) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {0, 2}, .size = 2},
         {.lifespan = {0, 2}, .size = 2},
@@ -120,7 +120,7 @@ TEST_P(SolverTest, InfeasibleTrivial) {
 }
 
 TEST_P(SolverTest, InfeasibleTricky) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {0, 1}, .size = 3},
         {.lifespan = {0, 3}, .size = 1},
@@ -136,7 +136,7 @@ TEST_P(SolverTest, InfeasibleTricky) {
 }
 
 TEST_P(SolverTest, SingleBuffer) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {{.lifespan = {0, 2}, .size = 2}},
     .capacity = 2
   };
@@ -144,7 +144,7 @@ TEST_P(SolverTest, SingleBuffer) {
 }
 
 TEST_P(SolverTest, TwoBuffers) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {0, 2}, .size = 2},
         {.lifespan = {1, 3}, .size = 2},
@@ -155,7 +155,7 @@ TEST_P(SolverTest, TwoBuffers) {
 }
 
 TEST_P(SolverTest, FiveBuffers) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {1, 2}, .size = 1},
         {.lifespan = {0, 2}, .size = 1},
@@ -169,7 +169,7 @@ TEST_P(SolverTest, FiveBuffers) {
 }
 
 TEST_P(SolverTest, TwoPartitions) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {0, 2}, .size = 2},
         {.lifespan = {1, 3}, .size = 2},
@@ -182,7 +182,7 @@ TEST_P(SolverTest, TwoPartitions) {
 }
 
 TEST_P(SolverTest, EvenAlignment) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {0, 2}, .size = 1, .alignment = 2},
         {.lifespan = {0, 2}, .size = 1, .alignment = 2},
@@ -193,7 +193,7 @@ TEST_P(SolverTest, EvenAlignment) {
 }
 
 TEST_P(SolverTest, BuffersWithGaps) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {0, 4}, .size = 2, .gaps = {{.lifespan = {1, 3}}}},
         {.lifespan = {1, 3}, .size = 2},
@@ -203,8 +203,21 @@ TEST_P(SolverTest, BuffersWithGaps) {
   test_feasible(problem);
 }
 
+TEST_P(SolverTest, Tetris) {
+  const Problem problem = {
+    .buffers = {
+        {.lifespan = {0, 10}, .size = 2, .gaps = {{.lifespan = {0, 5},
+                                                   .window = {{0, 1}}}}},
+        {.lifespan = {0, 10}, .size = 2, .gaps = {{.lifespan = {5, 10},
+                                                   .window = {{1, 2}}}}},
+     },
+    .capacity = 3
+  };
+  test_feasible(problem);
+}
+
 TEST(SolverTest, CountsBacktracks) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {0, 2}, .size = 2},
         {.lifespan = {0, 2}, .size = 2},
@@ -234,7 +247,7 @@ INSTANTIATE_TEST_SUITE_P(
     }));
 
 TEST_P(ReducesBacktracksTest, ReducesBacktracks) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {2, 3}, .size = 2},
         {.lifespan = {0, 1}, .size = 2},
@@ -257,7 +270,7 @@ TEST_P(ReducesBacktracksTest, ReducesBacktracks) {
 }
 
 TEST(SolverTest, ComputeIrreducibleInfeasibleSubset) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {0, 2}, .size = 2},  // Not part of the IIS.
         {.lifespan = {0, 2}, .size = 2},  // Not part of the IIS.

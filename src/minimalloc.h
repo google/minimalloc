@@ -76,6 +76,10 @@ struct Buffer {
   // gaps are high).  Might even be absent if the gaps line up "just so."
   std::optional<int64_t> effective_size(const Buffer& x) const;
 
+  // A lower bound on the contribution of this buffer to a section; may be less
+  // than 'size' if there are windowed gaps.
+  int64_t min_size() const;
+
   bool operator==(const Buffer& x) const;
 };
 

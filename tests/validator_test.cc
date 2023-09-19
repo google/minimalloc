@@ -23,7 +23,7 @@ namespace minimalloc {
 namespace {
 
 TEST(ValidatorTest, ValidatesGoodSolution) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {0, 1}, .size = 2},
         {.lifespan = {1, 3}, .size = 1},
@@ -33,12 +33,12 @@ TEST(ValidatorTest, ValidatesGoodSolution) {
     .capacity = 2
   };
   // right # of offsets, in range, no overlaps
-  Solution solution = {.offsets = {0, 0, 1, 0}};
+  const Solution solution = {.offsets = {0, 0, 1, 0}};
   EXPECT_EQ(Validate(problem, solution), kGood);
 }
 
 TEST(ValidatorTest, ValidatesGoodSolutionWithGaps) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {0, 10}, .size = 2, .gaps = {{.lifespan = {1, 9}}}},
         {.lifespan = {5, 15}, .size = 2, .gaps = {{.lifespan = {6, 14}}}},
@@ -46,12 +46,12 @@ TEST(ValidatorTest, ValidatesGoodSolutionWithGaps) {
     .capacity = 2
   };
   // right # of offsets, in range, no overlaps
-  Solution solution = {.offsets = {0, 0}};
+  const Solution solution = {.offsets = {0, 0}};
   EXPECT_EQ(Validate(problem, solution), kGood);
 }
 
 TEST(ValidatorTest, ValidatesGoodSolutionWithGapsEdgeCase) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {0, 10}, .size = 2, .gaps = {{.lifespan = {1, 8}}}},
         {.lifespan = {5, 15}, .size = 2, .gaps = {{.lifespan = {8, 14}}}},
@@ -59,12 +59,12 @@ TEST(ValidatorTest, ValidatesGoodSolutionWithGapsEdgeCase) {
     .capacity = 2
   };
   // right # of offsets, in range, no overlaps
-  Solution solution = {.offsets = {0, 0}};
+  const Solution solution = {.offsets = {0, 0}};
   EXPECT_EQ(Validate(problem, solution), kGood);
 }
 
 TEST(ValidatorTest, ValidatesTetris) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {0, 10}, .size = 2, .gaps = {{.lifespan = {0, 5},
                                                    .window = {{0, 1}}}}},
@@ -74,12 +74,12 @@ TEST(ValidatorTest, ValidatesTetris) {
     .capacity = 3
   };
   // right # of offsets, in range, no overlaps
-  Solution solution = {.offsets = {0, 1}};
+  const Solution solution = {.offsets = {0, 1}};
   EXPECT_EQ(Validate(problem, solution), kGood);
 }
 
 TEST(ValidatorTest, InvalidatesBadSolution) {
-  Problem problem = {
+  const Problem problem = {
       .buffers = {
           {.lifespan = {0, 1}, .size = 2},
           {.lifespan = {1, 2}, .size = 1},
@@ -87,12 +87,12 @@ TEST(ValidatorTest, InvalidatesBadSolution) {
       },
       .capacity = 2
   };
-  Solution solution = {.offsets = {0, 0}};  // wrong # of offsets
+  const Solution solution = {.offsets = {0, 0}};  // wrong # of offsets
   EXPECT_EQ(Validate(problem, solution), kBadSolution);
 }
 
 TEST(ValidatorTest, InvalidatesFixedBuffer) {
-  Problem problem = {
+  const Problem problem = {
       .buffers = {
           {.lifespan = {0, 1}, .size = 2},
           {.lifespan = {1, 2}, .size = 1},
@@ -100,12 +100,13 @@ TEST(ValidatorTest, InvalidatesFixedBuffer) {
       },
       .capacity = 2
   };
-  Solution solution = {.offsets = {0, 0, 1}};  // last buffer needs offset @ 0
+  // last buffer needs offset @ 0
+  const Solution solution = {.offsets = {0, 0, 1}};
   EXPECT_EQ(Validate(problem, solution), kBadFixed);
 }
 
 TEST(ValidatorTest, InvalidatesNegativeOffset) {
-  Problem problem = {
+  const Problem problem = {
       .buffers = {
           {.lifespan = {0, 1}, .size = 2},
           {.lifespan = {1, 2}, .size = 1},
@@ -113,12 +114,12 @@ TEST(ValidatorTest, InvalidatesNegativeOffset) {
       },
       .capacity = 2
   };
-  Solution solution = {.offsets = {0, 0, -1}};  // offset is negative
+  const Solution solution = {.offsets = {0, 0, -1}};  // offset is negative
   EXPECT_EQ(Validate(problem, solution), kBadOffset);
 }
 
 TEST(ValidatorTest, InvalidatesOutOfRangeOffset) {
-  Problem problem = {
+  const Problem problem = {
       .buffers = {
           {.lifespan = {0, 1}, .size = 2},
           {.lifespan = {1, 2}, .size = 1},
@@ -126,12 +127,13 @@ TEST(ValidatorTest, InvalidatesOutOfRangeOffset) {
       },
       .capacity = 2
   };
-  Solution solution = {.offsets = {0, 0, 2}};  // buffer lies outside range
+  // buffer lies outside range
+  const Solution solution = {.offsets = {0, 0, 2}};
   EXPECT_EQ(Validate(problem, solution), kBadOffset);
 }
 
 TEST(ValidatorTest, InvalidatesOverlap) {
-  Problem problem = {
+  const Problem problem = {
       .buffers = {
            {.lifespan = {0, 1}, .size = 2},
            {.lifespan = {1, 2}, .size = 1},
@@ -139,24 +141,26 @@ TEST(ValidatorTest, InvalidatesOverlap) {
       },
       .capacity = 2
   };
-  Solution solution = {.offsets = {0, 0, 0}};  // final two buffers overlap
+  // final two buffers overlap
+  const Solution solution = {.offsets = {0, 0, 0}};
   EXPECT_EQ(Validate(problem, solution), kBadOverlap);
 }
 
 TEST(ValidatorTest, InvalidatesMisalignment) {
-  Problem problem = {
+  const Problem problem = {
       .buffers = {
            {.lifespan = {0, 1}, .size = 2},
            {.lifespan = {1, 2}, .size = 1, .alignment = 2},
       },
       .capacity = 2
   };
-  Solution solution = {.offsets = {0, 1}};  // offset of 1 isn't a multiple of 2
+  // offset of 1 isn't a multiple of 2
+  const Solution solution = {.offsets = {0, 1}};
   EXPECT_EQ(Validate(problem, solution), kBadAlignment);
 }
 
 TEST(ValidatorTest, InvalidatesGapOverlap) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {0, 10}, .size = 2, .gaps = {{.lifespan = {1, 7}}}},
         {.lifespan = {5, 15}, .size = 2, .gaps = {{.lifespan = {8, 14}}}},
@@ -164,7 +168,7 @@ TEST(ValidatorTest, InvalidatesGapOverlap) {
     .capacity = 2
   };
   // right # of offsets, in range, no overlaps
-  Solution solution = {.offsets = {0, 0}};
+  const Solution solution = {.offsets = {0, 0}};
   EXPECT_EQ(Validate(problem, solution), kBadOverlap);
 }
 

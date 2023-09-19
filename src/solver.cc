@@ -86,7 +86,7 @@ class SolverImpl {
     for (SectionIdx s_idx = 0; s_idx < sweep_result_.sections.size(); ++s_idx) {
       const Section& section = sweep_result_.sections[s_idx];
       for (const BufferIdx buffer_idx : section) {
-        section_data_[s_idx].total += problem_.buffers[buffer_idx].size;
+        section_data_[s_idx].total += problem_.buffers[buffer_idx].min_size();
       }
     }
     cuts_ = sweep_result_.CalculateCuts();
@@ -189,7 +189,7 @@ class SolverImpl {
         section_changes.push_back(
             {.section_idx = s_idx, .floor = section_data_[s_idx].floor});
         section_data_[s_idx].floor = height;
-        section_data_[s_idx].total -= buffer.size;
+        section_data_[s_idx].total -= buffer.min_size();
       }
     }
     // The floor of any section cannot be lower than its lowest minimum offset.
@@ -222,7 +222,7 @@ class SolverImpl {
     for (const SectionRange& section_range : buffer_data.section_ranges) {
       for (SectionIdx s_idx = section_range.lower();
           s_idx < section_range.upper(); ++s_idx) {
-        section_data_[s_idx].total += buffer.size;
+        section_data_[s_idx].total += buffer.min_size();
       }
     }
   }
