@@ -43,7 +43,7 @@ namespace {
 /////////////////////////////////////////
 
 TEST(SweeperTest, NoOverlap) {
-  Problem problem = {
+  const Problem problem = {
       .buffers = {
           {.lifespan = {0, 1}, .size = 2},
           {.lifespan = {1, 2}, .size = 1},
@@ -68,7 +68,7 @@ TEST(SweeperTest, NoOverlap) {
 }
 
 TEST(CalculateCutsTest, NoOverlap) {
-  SweepResult sweep_result = {
+  const SweepResult sweep_result = {
      .sections = {{0}, {1}, {2}},
      .buffer_data = {
          {.section_ranges = {{0, 1}}},
@@ -97,7 +97,7 @@ TEST(CalculateCutsTest, NoOverlap) {
 ////////////////////////////////////////////////
 
 TEST(SweeperTest, WithOverlap) {
-  Problem problem = {
+  const Problem problem = {
       .buffers = {
           {.lifespan = {0, 1}, .size = 2},
           {.lifespan = {1, 3}, .size = 1},
@@ -121,7 +121,7 @@ TEST(SweeperTest, WithOverlap) {
 }
 
 TEST(CalculateCutsTest, WithOverlap) {
-  SweepResult sweep_result = {
+  const SweepResult sweep_result = {
       .sections = {{0}, {1, 2}, {2}},
       .buffer_data = {
           {.section_ranges = {{0, 1}}},
@@ -150,7 +150,7 @@ TEST(CalculateCutsTest, WithOverlap) {
 /////////////////////////////////////////
 
 TEST(SweeperTest, TwoBuffersEndAtSameTime) {
-  Problem problem = {
+  const Problem problem = {
       .buffers = {
           {.lifespan = {0, 1}, .size = 2},
           {.lifespan = {1, 3}, .size = 1},
@@ -174,7 +174,7 @@ TEST(SweeperTest, TwoBuffersEndAtSameTime) {
 }
 
 TEST(CalculateCutsTest, TwoBuffersEndAtSameTime) {
-  SweepResult sweep_result = {
+  const SweepResult sweep_result = {
       .sections = {{0}, {1, 2}},
       .buffer_data = {
           {.section_ranges = {{0, 1}}},
@@ -205,7 +205,7 @@ TEST(CalculateCutsTest, TwoBuffersEndAtSameTime) {
 ////////////////////////////////////////////////
 
 TEST(SweeperTest, SuperLongBufferPreventsPartitioning) {
-  Problem problem = {
+  const Problem problem = {
       .buffers = {
           {.lifespan = {0, 1}, .size = 2},
           {.lifespan = {1, 3}, .size = 1},
@@ -232,7 +232,7 @@ TEST(SweeperTest, SuperLongBufferPreventsPartitioning) {
 }
 
 TEST(CalculateCutsTest, SuperLongBufferPreventsPartitioning) {
-  SweepResult sweep_result = {
+  const SweepResult sweep_result = {
       .sections = {{0, 3}, {1, 3, 2}, {3, 2}},
       .buffer_data = {
           {.section_ranges = {{0, 1}}, .overlaps = {{3, 2}}},
@@ -262,7 +262,7 @@ TEST(CalculateCutsTest, SuperLongBufferPreventsPartitioning) {
 /////////////////////////////////////////
 
 TEST(SweeperTest, BuffersOutOfOrder) {
-  Problem problem = {
+  const Problem problem = {
       .buffers = {
           {.lifespan = {2, 3}, .size = 1},
           {.lifespan = {1, 3}, .size = 1},
@@ -286,7 +286,7 @@ TEST(SweeperTest, BuffersOutOfOrder) {
 }
 
 TEST(CalculateCutsTest, BuffersOutOfOrder) {
-  SweepResult sweep_result = {
+  const SweepResult sweep_result = {
       .sections = {{2}, {1, 0}},
       .buffer_data = {
           {.section_ranges = {{1, 2}}, .overlaps = {{1, 1}}},
@@ -317,7 +317,7 @@ TEST(CalculateCutsTest, BuffersOutOfOrder) {
 ////////////////////////////////////////////////
 
 TEST(SweeperTest, WithGaps) {
-  Problem problem = {
+  const Problem problem = {
       .buffers = {
           {.lifespan = {4, 7}, .size = 1, .gaps = {{.lifespan = {5, 6}}}},
           {.lifespan = {5, 8}, .size = 1, .gaps = {{.lifespan = {6, 7}}}},
@@ -341,7 +341,7 @@ TEST(SweeperTest, WithGaps) {
 }
 
 TEST(CalculateCutsTest, WithGaps) {
-  SweepResult sweep_result = {
+  const SweepResult sweep_result = {
       .sections = {{0, 2}, {1}, {0}, {1, 2}},
       .partitions = {
           {.buffer_idxs = {0, 2, 1}, .section_range = {0, 4}},
@@ -375,7 +375,7 @@ TEST(CalculateCutsTest, WithGaps) {
 ////////////////////////////////////////////////
 
 TEST(SweeperTest, Tetris) {
-  Problem problem = {
+  const Problem problem = {
     .buffers = {
         {.lifespan = {4, 8}, .size = 2, .gaps = {{.lifespan = {4, 6},
                                                   .window = {{0, 1}}}}},
@@ -398,6 +398,19 @@ TEST(SweeperTest, Tetris) {
       }));
 }
 
+TEST(CalculateCutsTest, Tetris) {
+  const SweepResult sweep_result = {
+      .sections = {{0, 1}},
+      .partitions = {
+          {.buffer_idxs = {0, 1}, .section_range = {0, 1}},
+      },
+      .buffer_data = {
+          {.section_ranges = {{0, 1}}, .overlaps = {{1, 1}}},
+          {.section_ranges = {{0, 1}}, .overlaps = {{0, 2}}},
+      },
+  };
+  EXPECT_EQ(sweep_result.CalculateCuts(), std::vector<CutCount>({}));
+}
 
 }  // namespace
 }  // namespace minimalloc
