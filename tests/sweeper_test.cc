@@ -355,5 +355,49 @@ TEST(CalculateCutsTest, WithGaps) {
   EXPECT_EQ(sweep_result.CalculateCuts(), std::vector<CutCount>({2, 3, 2}));
 }
 
+//////////////////// Tetris ////////////////////
+//                                            //
+//            t=4    t=5    t=6    t=7    t=8 //
+//             |======|======|======|======|  //
+//    offset=2 |                           |  //
+//             |      b1     |-------------|  //
+//    offset=1 |             |             |  //
+//             |-------------|      b0     |  //
+//    offset=0 |                           |  //
+//             |======|======|======|======|  //
+//                                            //
+//             |======|======|======|======|  //
+// partitions: |             p0            |  //
+//             |------|------|------|------|  //
+//   sections: |            sec0           |  //
+//             |======|======|======|======|  //
+//                                            //
+////////////////////////////////////////////////
+
+TEST(SweeperTest, Tetris) {
+  Problem problem = {
+    .buffers = {
+        {.lifespan = {4, 8}, .size = 2, .gaps = {{.lifespan = {4, 6},
+                                                  .window = {{0, 1}}}}},
+        {.lifespan = {4, 8}, .size = 2, .gaps = {{.lifespan = {6, 8},
+                                                  .window = {{1, 2}}}}},
+     },
+    .capacity = 3
+  };
+  EXPECT_EQ(
+      Sweep(problem),
+      (SweepResult{
+          .sections = {{0, 1}},
+          .partitions = {
+              {.buffer_idxs = {0, 1}, .section_range = {0, 1}},
+          },
+          .buffer_data = {
+              {.section_ranges = {{0, 1}}, .overlaps = {{1, 1}}},
+              {.section_ranges = {{0, 1}}, .overlaps = {{0, 2}}},
+          },
+      }));
+}
+
+
 }  // namespace
 }  // namespace minimalloc

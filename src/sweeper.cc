@@ -82,6 +82,7 @@ SweepResult Sweep(const Problem& problem) {
                       .time_value = buffer.lifespan.lower(),
                       .point_type = PointType::kLeft});
     for (const Gap& gap : buffer.gaps) {
+      if (gap.window) continue;
       points.push_back({.buffer_idx = buffer_idx,
                         .time_value = gap.lifespan.lower(),
                         .point_type = PointType::kRightGap});
