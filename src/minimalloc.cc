@@ -17,6 +17,8 @@ limitations under the License.
 
 #include "minimalloc.h"
 
+#include <algorithm>
+#include <cstdint>
 #include <optional>
 #include <vector>
 
@@ -27,7 +29,7 @@ namespace minimalloc {
 
 namespace {
 
-enum PointType { kLeft, kRightGap, kLeftGap, kRight };
+enum PointType { kLeft, kLeftGap, kRightGap, kRight };
 
 struct Point {
   BufferIdx buffer_idx;

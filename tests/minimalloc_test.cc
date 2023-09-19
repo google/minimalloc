@@ -99,6 +99,18 @@ TEST(BufferTest, EffectiveSizeTetris) {
   EXPECT_EQ(bufferA.effective_size(bufferB), 1);
 }
 
+TEST(BufferTest, EffectiveSizeStairs) {
+  const Buffer bufferA = {.lifespan = {0, 15},
+                          .size = 3,
+                          .gaps = {{.lifespan = {0, 5}, .window = {{0, 1}}},
+                                   {.lifespan = {5, 10}, .window = {{0, 2}}}}};
+  const Buffer bufferB = {.lifespan = {0, 15},
+                          .size = 3,
+                          .gaps = {{.lifespan = {5, 10}, .window = {{1, 3}}},
+                                   {.lifespan = {10, 15}, .window = {{2, 3}}}}};
+  EXPECT_EQ(bufferA.effective_size(bufferB), 1);
+}
+
 TEST(ProblemTest, StripSolutionOk) {
   Problem problem = {
     .buffers = {
