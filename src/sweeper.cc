@@ -17,6 +17,7 @@ limitations under the License.
 #include "sweeper.h"
 
 #include <algorithm>
+#include <optional>
 #include <vector>
 
 #include "absl/container/btree_set.h"

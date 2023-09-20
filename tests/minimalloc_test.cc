@@ -16,6 +16,7 @@ limitations under the License.
 
 #include "../src/minimalloc.h"
 
+#include <optional>
 #include <string>
 
 #include "gmock/gmock.h"
