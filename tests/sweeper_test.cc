@@ -20,7 +20,6 @@ limitations under the License.
 
 #include "../src/minimalloc.h"
 #include "gtest/gtest.h"
-#include "absl/container/btree_set.h"
 
 namespace minimalloc {
 namespace {
