@@ -124,34 +124,40 @@ SweepResult Sweep(const Problem& problem) {
     const bool isEmptyRightGap = point_type == kRightGap && !window;
     const bool isWindowedLeftGap = point_type == kLeftGap && window;
     const bool isWindowedRightGap = point_type == kRightGap && window;
+    if (last_section_time == -1) last_section_time = time_value;
     // If it's a right endpoint, remove it from the set of active buffers.
     if (isWindowedRightGap) {
       buffer_idx_to_window[buffer_idx] = {0, buffer.size};
     }
-    if (isRight || isEmptyRightGap) {
+    if (isRight || isEmptyRightGap || isWindowedRightGap || isWindowedLeftGap) {
       // Create a new cross section of buffers if one doesn't yet exist.
       if (last_section_time < time_value) {
         last_section_time = time_value;
         result.sections.push_back(actives);
       }
+    }
+    if (isRight || isEmptyRightGap) {
       actives.erase(buffer_idx);
     }
     if (isRight) {
       alive.erase(buffer_idx);
     }
-    if (isRight || isEmptyRightGap) {
-      const SectionRange section_range =
-          {buffer_idx_to_section_start[buffer_idx],
-           (int)result.sections.size()};
-      const SectionSpan section_span =
-          {.section_range = section_range,
-           .window = buffer_idx_to_window[buffer_idx]};
-      result.buffer_data[buffer_idx].section_spans.push_back(section_span);
-      // If the alives are empty, the span of this partition is now known.
-      if (alive.empty()) {
-        result.partitions.back().section_range = {last_section_idx,
-                                                  (int)result.sections.size()};
-        last_section_idx = result.sections.size();
+    if (isRight || isEmptyRightGap || isWindowedRightGap || isWindowedLeftGap) {
+      if (buffer_idx_to_section_start[buffer_idx] != -1) {
+        const SectionRange section_range =
+            {buffer_idx_to_section_start[buffer_idx],
+             (int)result.sections.size()};
+        const SectionSpan section_span =
+            {.section_range = section_range,
+             .window = buffer_idx_to_window[buffer_idx]};
+        result.buffer_data[buffer_idx].section_spans.push_back(section_span);
+        // If the alives are empty, the span of this partition is now known.
+        if (alive.empty()) {
+          result.partitions.back().section_range =
+              {last_section_idx, (int)result.sections.size()};
+          last_section_idx = result.sections.size();
+        }
+        buffer_idx_to_section_start[buffer_idx] = -1;
       }
     }
     if (isWindowedLeftGap) {
@@ -179,13 +185,15 @@ SweepResult Sweep(const Problem& problem) {
                                                           *effective_size});
         }
       }
+    }
+    if (isLeft || isEmptyLeftGap) {
       actives.insert(buffer_idx);
     }
     if (isLeft) {
       // Mutants OK for following line; performance tweak to prevent reinsertion
       alive.insert(buffer_idx);
     }
-    if (isLeft || isEmptyLeftGap) {
+    if (isLeft || isEmptyLeftGap || isWindowedLeftGap || isWindowedRightGap) {
       buffer_idx_to_section_start[buffer_idx] = result.sections.size();
     }
   }

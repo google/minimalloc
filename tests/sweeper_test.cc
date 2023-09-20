@@ -393,7 +393,7 @@ TEST(CalculateCutsTest, WithGaps) {
 //             |======|======|======|======|  //
 // partitions: |             p0            |  //
 //             |------|------|------|------|  //
-//   sections: |            sec0           |  //
+//   sections: |     sec0    |     sec1    |  //
 //             |======|======|======|======|  //
 //                                            //
 ////////////////////////////////////////////////
@@ -411,12 +411,14 @@ TEST(SweeperTest, Tetris) {
   EXPECT_EQ(
       Sweep(problem),
       (SweepResult{
-          .sections = {{0, 1}},
-          .partitions = {{.buffer_idxs = {0, 1}, .section_range = {0, 1}}},
+          .sections = {{0, 1}, {0, 1}},
+          .partitions = {{.buffer_idxs = {0, 1}, .section_range = {0, 2}}},
           .buffer_data = {
-              {.section_spans = {{.section_range = {0, 1}, .window = {0, 1}}},
+              {.section_spans = {{.section_range = {0, 1}, .window = {0, 2}},
+                                 {.section_range = {1, 2}, .window = {0, 1}}},
                .overlaps = {{1, 1}}},
-              {.section_spans = {{.section_range = {0, 1}, .window = {0, 2}}},
+              {.section_spans = {{.section_range = {0, 1}, .window = {0, 2}},
+                                 {.section_range = {1, 2}, .window = {0, 2}}},
                .overlaps = {{0, 2}}},
           },
       }));
