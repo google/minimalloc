@@ -27,7 +27,7 @@ namespace minimalloc {
 
 namespace {
 
-enum class PointType { kRightGap, kRight, kLeft, kLeftGap };
+enum PointType { kRightGap, kRight, kLeft, kLeftGap };
 
 struct Point {
   BufferIdx buffer_idx;
@@ -114,21 +114,32 @@ SweepResult Sweep(const Problem& problem) {
   }
   for (const Point& point : points) {
     const BufferIdx buffer_idx = point.buffer_idx;
+    const TimeValue time_value = point.time_value;
     const PointType point_type = point.point_type;
+    const std::optional<Window> window = point.window;
     const Buffer& buffer = problem.buffers[buffer_idx];
+    const bool isLeft = point_type == kLeft;
+    const bool isRight = point_type == kRight;
+    const bool isEmptyLeftGap = point_type == kLeftGap && !window;
+    const bool isEmptyRightGap = point_type == kRightGap && !window;
+    const bool isWindowedLeftGap = point_type == kLeftGap && window;
+    const bool isWindowedRightGap = point_type == kRightGap && window;
     // If it's a right endpoint, remove it from the set of active buffers.
-    if (point_type == PointType::kRight || point_type == PointType::kRightGap) {
-      if (point.window) {
-        buffer_idx_to_window[buffer_idx] = {0, buffer.size};
-        continue;
-      }
+    if (isWindowedRightGap) {
+      buffer_idx_to_window[buffer_idx] = {0, buffer.size};
+    }
+    if (isRight || isEmptyRightGap) {
       // Create a new cross section of buffers if one doesn't yet exist.
-      if (last_section_time < point.time_value) {
-        last_section_time = point.time_value;
+      if (last_section_time < time_value) {
+        last_section_time = time_value;
         result.sections.push_back(actives);
       }
       actives.erase(buffer_idx);
-      if (point_type == PointType::kRight) alive.erase(buffer_idx);
+    }
+    if (isRight) {
+      alive.erase(buffer_idx);
+    }
+    if (isRight || isEmptyRightGap) {
       const SectionRange section_range =
           {buffer_idx_to_section_start[buffer_idx],
            (int)result.sections.size()};
@@ -142,35 +153,41 @@ SweepResult Sweep(const Problem& problem) {
                                                   (int)result.sections.size()};
         last_section_idx = result.sections.size();
       }
-      continue;
     }
-    if (point.window) {
-      buffer_idx_to_window[buffer_idx] = *point.window;
-      continue;
+    if (isWindowedLeftGap) {
+      buffer_idx_to_window[buffer_idx] = *window;
     }
-    // If it's a left endpoint, check if a new partition should be established.
-    if (alive.empty()) result.partitions.push_back(Partition());
-    // Record any overlaps, and then add this buffer to the set of actives.
-    if (point_type == PointType::kLeft) {
+    if (isLeft || isEmptyLeftGap) {
+      // If it's a left endpoint, check if a new partition should be established
+      if (alive.empty()) result.partitions.push_back(Partition());
+    }
+    if (isLeft) {
+      // Record any overlaps, and then add this buffer to the set of actives.
       result.partitions.back().buffer_idxs.push_back(buffer_idx);
     }
-    for (auto active_idx : actives) {
-      const Buffer& active = problem.buffers[active_idx];
-      auto active_effective_size = active.effective_size(buffer);
-      if (active_effective_size) {
-        result.buffer_data[active_idx].overlaps.insert(
-            {buffer_idx, *active_effective_size});
+    if (isLeft || isEmptyLeftGap) {
+      for (auto active_idx : actives) {
+        const Buffer& active = problem.buffers[active_idx];
+        auto active_effective_size = active.effective_size(buffer);
+        if (active_effective_size) {
+          result.buffer_data[active_idx].overlaps.insert(
+              {buffer_idx, *active_effective_size});
+        }
+        auto effective_size = buffer.effective_size(active);
+        if (effective_size) {
+          result.buffer_data[buffer_idx].overlaps.insert({active_idx,
+                                                          *effective_size});
+        }
       }
-      auto effective_size = buffer.effective_size(active);
-      if (effective_size) {
-        result.buffer_data[buffer_idx].overlaps.insert({active_idx,
-                                                        *effective_size});
-      }
+      actives.insert(buffer_idx);
     }
-    actives.insert(buffer_idx);
-    // Mutants OK for following line; performance tweak to prevent re-insertion.
-    if (point_type == PointType::kLeft) alive.insert(buffer_idx);
-    buffer_idx_to_section_start[buffer_idx] = result.sections.size();
+    if (isLeft) {
+      // Mutants OK for following line; performance tweak to prevent reinsertion
+      alive.insert(buffer_idx);
+    }
+    if (isLeft || isEmptyLeftGap) {
+      buffer_idx_to_section_start[buffer_idx] = result.sections.size();
+    }
   }
   return result;
 }
