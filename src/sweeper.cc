@@ -32,6 +32,7 @@ struct Point {
   BufferIdx buffer_idx;
   TimeValue time_value;
   PointType point_type;
+  std::optional<Window> window;
   bool operator<(const Point& x) const {
     // First, order by time, then direction (right vs. left), then buffer idx.
     if (time_value != x.time_value) return time_value < x.time_value;
@@ -43,7 +44,7 @@ struct Point {
 }  // namespace
 
 bool SectionSpan::operator==(const SectionSpan& x) const {
-  return section_range == x.section_range;
+  return section_range == x.section_range && window == x.window;
 }
 
 bool Partition::operator==(const Partition& x) const {
@@ -86,13 +87,14 @@ SweepResult Sweep(const Problem& problem) {
                       .time_value = buffer.lifespan.lower(),
                       .point_type = PointType::kLeft});
     for (const Gap& gap : buffer.gaps) {
-      if (gap.window) continue;
       points.push_back({.buffer_idx = buffer_idx,
                         .time_value = gap.lifespan.lower(),
-                        .point_type = PointType::kRightGap});
+                        .point_type = PointType::kRightGap,
+                        .window = gap.window});
       points.push_back({.buffer_idx = buffer_idx,
                         .time_value = gap.lifespan.upper(),
-                        .point_type = PointType::kLeftGap});
+                        .point_type = PointType::kLeftGap,
+                        .window = gap.window});
     }
     points.push_back({.buffer_idx = buffer_idx,
                       .time_value = buffer.lifespan.upper(),
@@ -105,54 +107,69 @@ SweepResult Sweep(const Problem& problem) {
   // Create a reverse index (from buffers to sections) for quick lookup.
   result.buffer_data.resize(num_buffers);
   std::vector<SectionIdx> buffer_idx_to_section_start(num_buffers, -1);
+  std::vector<Window> buffer_idx_to_window(num_buffers);
+  for (auto buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
+    buffer_idx_to_window[buffer_idx] = {0, problem.buffers[buffer_idx].size};
+  }
   for (const Point& point : points) {
+    const BufferIdx buffer_idx = point.buffer_idx;
     const PointType point_type = point.point_type;
+    const Buffer& buffer = problem.buffers[buffer_idx];
     // If it's a right endpoint, remove it from the set of active buffers.
     if (point_type == PointType::kRight || point_type == PointType::kRightGap) {
+      if (point.window) {
+        buffer_idx_to_window[buffer_idx] = {0, buffer.size};
+        continue;
+      }
       // Create a new cross section of buffers if one doesn't yet exist.
       if (last_section_time < point.time_value) {
         last_section_time = point.time_value;
         result.sections.push_back(actives);
       }
-      actives.erase(point.buffer_idx);
-      if (point_type == PointType::kRight) alive.erase(point.buffer_idx);
+      actives.erase(buffer_idx);
+      if (point_type == PointType::kRight) alive.erase(buffer_idx);
       const SectionRange section_range =
-          {buffer_idx_to_section_start[point.buffer_idx],
+          {buffer_idx_to_section_start[buffer_idx],
            (int)result.sections.size()};
-      result.buffer_data[point.buffer_idx].section_spans.push_back(
-          {section_range});
+      const SectionSpan section_span =
+          {.section_range = section_range,
+           .window = buffer_idx_to_window[buffer_idx]};
+      result.buffer_data[buffer_idx].section_spans.push_back(section_span);
       // If the alives are empty, the span of this partition is now known.
       if (alive.empty()) {
-        result.partitions.back().section_range =
-            {last_section_idx, (int)result.sections.size()};
+        result.partitions.back().section_range = {last_section_idx,
+                                                  (int)result.sections.size()};
         last_section_idx = result.sections.size();
       }
+      continue;
+    }
+    if (point.window) {
+      buffer_idx_to_window[buffer_idx] = *point.window;
       continue;
     }
     // If it's a left endpoint, check if a new partition should be established.
     if (alive.empty()) result.partitions.push_back(Partition());
     // Record any overlaps, and then add this buffer to the set of actives.
     if (point_type == PointType::kLeft) {
-      result.partitions.back().buffer_idxs.push_back(point.buffer_idx);
+      result.partitions.back().buffer_idxs.push_back(buffer_idx);
     }
-    const Buffer& buffer = problem.buffers[point.buffer_idx];
     for (auto active_idx : actives) {
       const Buffer& active = problem.buffers[active_idx];
       auto active_effective_size = active.effective_size(buffer);
       if (active_effective_size) {
         result.buffer_data[active_idx].overlaps.insert(
-            {point.buffer_idx, *active_effective_size});
+            {buffer_idx, *active_effective_size});
       }
       auto effective_size = buffer.effective_size(active);
       if (effective_size) {
-        result.buffer_data[point.buffer_idx].overlaps.insert(
-            {active_idx, *effective_size});
+        result.buffer_data[buffer_idx].overlaps.insert({active_idx,
+                                                        *effective_size});
       }
     }
-    actives.insert(point.buffer_idx);
+    actives.insert(buffer_idx);
     // Mutants OK for following line; performance tweak to prevent re-insertion.
-    if (point_type == PointType::kLeft) alive.insert(point.buffer_idx);
-    buffer_idx_to_section_start[point.buffer_idx] = result.sections.size();
+    if (point_type == PointType::kLeft) alive.insert(buffer_idx);
+    buffer_idx_to_section_start[buffer_idx] = result.sections.size();
   }
   return result;
 }

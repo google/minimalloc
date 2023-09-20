@@ -35,9 +35,10 @@ using CutCount = int;
 // continuously active).
 using SectionRange = Interval<SectionIdx>;
 
-// Defines a range that a buffer is active. TODO(moffitt): Include size as well.
+// Defines a range that a buffer is active and its window during this interval.
 struct SectionSpan {
   SectionRange section_range;
+  Window window;
   bool operator==(const SectionSpan& x) const;
 };
 
