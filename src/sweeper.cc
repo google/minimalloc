@@ -75,15 +75,10 @@ bool SweepResult::operator==(const SweepResult& x) const {
 }
 
 // For a given problem, places all buffer start times into a priority queue.
-// Then, maintains an "active" set of buffers to determine disjoint partitions.
-// For each partition, records the list of buffers + pairwise overlaps + unique
-// cross sections.
-SweepResult Sweep(const Problem& problem) {
-  SweepResult result;
+std::vector<Point> CreatePoints(const Problem& problem) {
   std::vector<Point> points;
-  const auto num_buffers = problem.buffers.size();
-  points.reserve(num_buffers * 2);  // Reserve 2 spots per buffer.
-  for (BufferIdx buffer_idx = 0; buffer_idx < num_buffers; ++buffer_idx) {
+  points.reserve(problem.buffers.size() * 2);  // Reserve 2 spots per buffer.
+  for (auto buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
     const Buffer& buffer = problem.buffers[buffer_idx];
     Window window = {0, buffer.size};
     std::optional<Point> point = {{.buffer_idx = buffer_idx,  // Point 'A'
@@ -162,6 +157,16 @@ SweepResult Sweep(const Problem& problem) {
                       .endpoint = true});
   }
   std::sort(points.begin(), points.end());
+  return points;
+}
+
+// Maintains an "active" set of buffers to determine disjoint partitions.  For
+// each partition, records the list of buffers + pairwise overlaps + unique
+// cross sections.
+SweepResult Sweep(const Problem& problem) {
+  SweepResult result;
+  const auto num_buffers = problem.buffers.size();
+  const std::vector<Point> points = CreatePoints(problem);
   Section actives, alive;
   TimeValue last_section_time = -1;
   SectionIdx last_section_idx = 0;
