@@ -27,7 +27,14 @@ namespace minimalloc {
 
 namespace {
 
-enum PointType { kRightGap, kRight, kLeft, kLeftGap };
+enum PointType {
+  kWindowedLeftGap,
+  kEmptyRightGap,
+  kRight,
+  kLeft,
+  kEmptyLeftGap,
+  kWindowedRightGap
+};
 
 struct Point {
   BufferIdx buffer_idx;
@@ -84,22 +91,26 @@ SweepResult Sweep(const Problem& problem) {
   points.reserve(num_buffers * 2);  // Reserve 2 spots per buffer.
   for (BufferIdx buffer_idx = 0; buffer_idx < num_buffers; ++buffer_idx) {
     const Buffer& buffer = problem.buffers[buffer_idx];
-    points.push_back({.buffer_idx = buffer_idx,
-                      .time_value = buffer.lifespan.lower(),
-                      .point_type = PointType::kLeft});
+    points.push_back(
+        {.buffer_idx = buffer_idx,
+         .time_value = buffer.lifespan.lower(),
+         .point_type = kLeft});
     for (const Gap& gap : buffer.gaps) {
-      points.push_back({.buffer_idx = buffer_idx,
-                        .time_value = gap.lifespan.lower(),
-                        .point_type = PointType::kRightGap,
-                        .window = gap.window});
-      points.push_back({.buffer_idx = buffer_idx,
-                        .time_value = gap.lifespan.upper(),
-                        .point_type = PointType::kLeftGap,
-                        .window = gap.window});
+      points.push_back(
+          {.buffer_idx = buffer_idx,
+           .time_value = gap.lifespan.lower(),
+           .point_type = gap.window ? kWindowedRightGap : kEmptyRightGap,
+           .window = gap.window});
+      points.push_back(
+          {.buffer_idx = buffer_idx,
+           .time_value = gap.lifespan.upper(),
+           .point_type = gap.window ? kWindowedLeftGap : kEmptyLeftGap,
+           .window = gap.window});
     }
-    points.push_back({.buffer_idx = buffer_idx,
-                      .time_value = buffer.lifespan.upper(),
-                      .point_type = PointType::kRight});
+    points.push_back(
+        {.buffer_idx = buffer_idx,
+         .time_value = buffer.lifespan.upper(),
+         .point_type = kRight});
   }
   std::sort(points.begin(), points.end());
   Section actives, alive;
@@ -120,15 +131,11 @@ SweepResult Sweep(const Problem& problem) {
     const Buffer& buffer = problem.buffers[buffer_idx];
     const bool isLeft = point_type == kLeft;
     const bool isRight = point_type == kRight;
-    const bool isEmptyLeftGap = point_type == kLeftGap && !window;
-    const bool isEmptyRightGap = point_type == kRightGap && !window;
-    const bool isWindowedLeftGap = point_type == kLeftGap && window;
-    const bool isWindowedRightGap = point_type == kRightGap && window;
+    const bool isEmptyLeftGap = point_type == kEmptyLeftGap;
+    const bool isEmptyRightGap = point_type == kEmptyRightGap;
+    const bool isWindowedLeftGap = point_type == kWindowedLeftGap;
+    const bool isWindowedRightGap = point_type == kWindowedRightGap;
     if (last_section_time == -1) last_section_time = time_value;
-    // If it's a right endpoint, remove it from the set of active buffers.
-    if (isWindowedRightGap) {
-      buffer_idx_to_window[buffer_idx] = {0, buffer.size};
-    }
     if (isRight || isEmptyRightGap || isWindowedRightGap || isWindowedLeftGap) {
       // Create a new cross section of buffers if one doesn't yet exist.
       if (last_section_time < time_value) {
@@ -136,6 +143,7 @@ SweepResult Sweep(const Problem& problem) {
         result.sections.push_back(actives);
       }
     }
+    // If it's a right endpoint, remove it from the set of active buffers.
     if (isRight || isEmptyRightGap) {
       actives.erase(buffer_idx);
     }
@@ -143,7 +151,8 @@ SweepResult Sweep(const Problem& problem) {
       alive.erase(buffer_idx);
     }
     if (isRight || isEmptyRightGap || isWindowedRightGap || isWindowedLeftGap) {
-      if (buffer_idx_to_section_start[buffer_idx] != -1) {
+      if (buffer_idx_to_section_start[buffer_idx] != -1 &&
+          buffer_idx_to_section_start[buffer_idx] != result.sections.size()) {
         const SectionRange section_range =
             {buffer_idx_to_section_start[buffer_idx],
              (int)result.sections.size()};
@@ -151,17 +160,20 @@ SweepResult Sweep(const Problem& problem) {
             {.section_range = section_range,
              .window = buffer_idx_to_window[buffer_idx]};
         result.buffer_data[buffer_idx].section_spans.push_back(section_span);
-        // If the alives are empty, the span of this partition is now known.
-        if (alive.empty()) {
-          result.partitions.back().section_range =
-              {last_section_idx, (int)result.sections.size()};
-          last_section_idx = result.sections.size();
-        }
         buffer_idx_to_section_start[buffer_idx] = -1;
       }
+      // If the alives are empty, the span of this partition is now known.
+      if (alive.empty()) {
+        result.partitions.back().section_range =
+            {last_section_idx, (int)result.sections.size()};
+        last_section_idx = result.sections.size();
+      }
+    }
+    if (isWindowedRightGap) {
+      buffer_idx_to_window[buffer_idx] = *window;
     }
     if (isWindowedLeftGap) {
-      buffer_idx_to_window[buffer_idx] = *window;
+      buffer_idx_to_window[buffer_idx] = {0, buffer.size};
     }
     if (isLeft || isEmptyLeftGap) {
       // If it's a left endpoint, check if a new partition should be established
