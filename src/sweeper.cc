@@ -27,20 +27,14 @@ namespace minimalloc {
 
 namespace {
 
-enum PointType {
-  kWindowedLeftGap,
-  kEmptyRightGap,
-  kRight,
-  kLeft,
-  kEmptyLeftGap,
-  kWindowedRightGap
-};
+enum PointType { kRight, kLeft };
 
 struct Point {
   BufferIdx buffer_idx;
   TimeValue time_value;
   PointType point_type;
-  std::optional<Window> window;
+  Window window;
+  bool endpoint;
   bool operator<(const Point& x) const {
     // First, order by time, then direction (right vs. left), then buffer idx.
     if (time_value != x.time_value) return time_value < x.time_value;
@@ -91,26 +85,81 @@ SweepResult Sweep(const Problem& problem) {
   points.reserve(num_buffers * 2);  // Reserve 2 spots per buffer.
   for (BufferIdx buffer_idx = 0; buffer_idx < num_buffers; ++buffer_idx) {
     const Buffer& buffer = problem.buffers[buffer_idx];
-    points.push_back(
-        {.buffer_idx = buffer_idx,
-         .time_value = buffer.lifespan.lower(),
-         .point_type = kLeft});
+    Window window = {0, buffer.size};
+    std::optional<Point> point = {{.buffer_idx = buffer_idx,  // Point 'A'
+                                   .time_value = buffer.lifespan.lower(),
+                                   .point_type = kLeft,
+                                   .window = window,
+                                   .endpoint = true}};
+    // There are six *potential* points of interest for a gap:
+    //
+    //   A        BC       DE        F
+    //             |-------|
+    //   |--------||  gap  ||--------|
+    //             |-------|
+    //
+    // Point 'A' may not need to be created if it's co-occurrent with point 'B',
+    // points 'C' and 'D' may not need to be created unless there's a window,
+    // and so on.
     for (const Gap& gap : buffer.gaps) {
-      points.push_back(
-          {.buffer_idx = buffer_idx,
-           .time_value = gap.lifespan.lower(),
-           .point_type = gap.window ? kWindowedRightGap : kEmptyRightGap,
-           .window = gap.window});
-      points.push_back(
-          {.buffer_idx = buffer_idx,
-           .time_value = gap.lifespan.upper(),
-           .point_type = gap.window ? kWindowedLeftGap : kEmptyLeftGap,
-           .window = gap.window});
+      if (gap.window) {  // This gap has a window
+        bool endpoint = false;
+        if (point) {
+          if (gap.lifespan.lower() > point->time_value) {
+            points.push_back(*point);
+            points.push_back({.buffer_idx = buffer_idx,  // Point 'B'
+                              .time_value = gap.lifespan.lower(),
+                              .point_type = kRight,
+                              .window = window,
+                              .endpoint = false});
+          } else {
+            endpoint = true;  // Special case: we're at the very beginning
+          }
+          point.reset();
+        }
+        points.push_back({.buffer_idx = buffer_idx,  // Point 'C'
+                          .time_value = gap.lifespan.lower(),
+                          .point_type = kLeft,
+                          .window = *gap.window,
+                          .endpoint = endpoint});
+        if (gap.lifespan.upper() == buffer.lifespan.upper()) {
+          window = *gap.window;  // Special case: we've reached the very end
+          continue;
+        }
+        points.push_back({.buffer_idx = buffer_idx,  // Point 'D'
+                          .time_value = gap.lifespan.upper(),
+                          .point_type = kRight,
+                          .window = *gap.window,
+                          .endpoint = false});
+        points.push_back({.buffer_idx = buffer_idx,  // Point 'E'
+                          .time_value = gap.lifespan.upper(),
+                          .point_type = kLeft,
+                          .window = window,
+                          .endpoint = false});
+      } else {  // This gap does not have a window
+        points.push_back(*point);
+        point.reset();
+        points.push_back({.buffer_idx = buffer_idx,
+                          .time_value = gap.lifespan.lower(),
+                          .point_type = kRight,
+                          .window = window,
+                          .endpoint = false});
+        points.push_back({.buffer_idx = buffer_idx,
+                          .time_value = gap.lifespan.upper(),
+                          .point_type = kLeft,
+                          .window = window,
+                          .endpoint = false});
+      }
     }
-    points.push_back(
-        {.buffer_idx = buffer_idx,
-         .time_value = buffer.lifespan.upper(),
-         .point_type = kRight});
+    if (point) {
+      points.push_back(*point);
+      point.reset();
+    }
+    points.push_back({.buffer_idx = buffer_idx,  // Point 'F'
+                      .time_value = buffer.lifespan.upper(),
+                      .point_type = kRight,
+                      .window = window,
+                      .endpoint = true});
   }
   std::sort(points.begin(), points.end());
   Section actives, alive;
@@ -119,49 +168,24 @@ SweepResult Sweep(const Problem& problem) {
   // Create a reverse index (from buffers to sections) for quick lookup.
   result.buffer_data.resize(num_buffers);
   std::vector<SectionIdx> buffer_idx_to_section_start(num_buffers, -1);
-  std::vector<Window> buffer_idx_to_window(num_buffers);
-  for (auto buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
-    buffer_idx_to_window[buffer_idx] = {0, problem.buffers[buffer_idx].size};
-  }
   for (const Point& point : points) {
     const BufferIdx buffer_idx = point.buffer_idx;
-    const TimeValue time_value = point.time_value;
-    const PointType point_type = point.point_type;
-    const std::optional<Window> window = point.window;
     const Buffer& buffer = problem.buffers[buffer_idx];
-    const bool isLeft = point_type == kLeft;
-    const bool isRight = point_type == kRight;
-    const bool isEmptyLeftGap = point_type == kEmptyLeftGap;
-    const bool isEmptyRightGap = point_type == kEmptyRightGap;
-    const bool isWindowedLeftGap = point_type == kWindowedLeftGap;
-    const bool isWindowedRightGap = point_type == kWindowedRightGap;
-    if (last_section_time == -1) last_section_time = time_value;
-    if (isRight || isEmptyRightGap || isWindowedRightGap || isWindowedLeftGap) {
+    if (last_section_time == -1) last_section_time = point.time_value;
+    if (point.point_type == kRight) {
       // Create a new cross section of buffers if one doesn't yet exist.
-      if (last_section_time < time_value) {
-        last_section_time = time_value;
+      if (last_section_time < point.time_value) {
+        last_section_time = point.time_value;
         result.sections.push_back(actives);
       }
-    }
-    // If it's a right endpoint, remove it from the set of active buffers.
-    if (isRight || isEmptyRightGap) {
+      // If it's a right endpoint, remove it from the set of active buffers.
       actives.erase(buffer_idx);
-    }
-    if (isRight) {
-      alive.erase(buffer_idx);
-    }
-    if (isRight || isEmptyRightGap || isWindowedRightGap || isWindowedLeftGap) {
-      if (buffer_idx_to_section_start[buffer_idx] != -1 &&
-          buffer_idx_to_section_start[buffer_idx] != result.sections.size()) {
-        const SectionRange section_range =
-            {buffer_idx_to_section_start[buffer_idx],
-             (int)result.sections.size()};
-        const SectionSpan section_span =
-            {.section_range = section_range,
-             .window = buffer_idx_to_window[buffer_idx]};
-        result.buffer_data[buffer_idx].section_spans.push_back(section_span);
-        buffer_idx_to_section_start[buffer_idx] = -1;
-      }
+      if (point.endpoint) alive.erase(buffer_idx);
+      const SectionRange section_range =
+          {buffer_idx_to_section_start[buffer_idx],
+           (int)result.sections.size()};
+      const SectionSpan section_span = {section_range, point.window};
+      result.buffer_data[buffer_idx].section_spans.push_back(section_span);
       // If the alives are empty, the span of this partition is now known.
       if (alive.empty()) {
         result.partitions.back().section_range =
@@ -169,43 +193,29 @@ SweepResult Sweep(const Problem& problem) {
         last_section_idx = result.sections.size();
       }
     }
-    if (isWindowedRightGap) {
-      buffer_idx_to_window[buffer_idx] = *window;
-    }
-    if (isWindowedLeftGap) {
-      buffer_idx_to_window[buffer_idx] = {0, buffer.size};
-    }
-    if (isLeft || isEmptyLeftGap) {
+    if (point.point_type == kLeft) {
       // If it's a left endpoint, check if a new partition should be established
       if (alive.empty()) result.partitions.push_back(Partition());
-    }
-    if (isLeft) {
       // Record any overlaps, and then add this buffer to the set of actives.
-      result.partitions.back().buffer_idxs.push_back(buffer_idx);
-    }
-    if (isLeft || isEmptyLeftGap) {
-      for (auto active_idx : actives) {
-        const Buffer& active = problem.buffers[active_idx];
-        auto active_effective_size = active.effective_size(buffer);
-        if (active_effective_size) {
-          result.buffer_data[active_idx].overlaps.insert(
-              {buffer_idx, *active_effective_size});
-        }
-        auto effective_size = buffer.effective_size(active);
-        if (effective_size) {
-          result.buffer_data[buffer_idx].overlaps.insert({active_idx,
-                                                          *effective_size});
+      if (point.endpoint) {
+        result.partitions.back().buffer_idxs.push_back(buffer_idx);
+        for (auto alive_idx : alive) {
+          const Buffer& alive = problem.buffers[alive_idx];
+          auto alive_effective_size = alive.effective_size(buffer);
+          if (alive_effective_size) {
+            result.buffer_data[alive_idx].overlaps.insert(
+                {buffer_idx, *alive_effective_size});
+          }
+          auto effective_size = buffer.effective_size(alive);
+          if (effective_size) {
+            result.buffer_data[buffer_idx].overlaps.insert({alive_idx,
+                                                            *effective_size});
+          }
         }
       }
-    }
-    if (isLeft || isEmptyLeftGap) {
       actives.insert(buffer_idx);
-    }
-    if (isLeft) {
       // Mutants OK for following line; performance tweak to prevent reinsertion
-      alive.insert(buffer_idx);
-    }
-    if (isLeft || isEmptyLeftGap || isWindowedLeftGap || isWindowedRightGap) {
+      if (point.endpoint) alive.insert(buffer_idx);
       buffer_idx_to_section_start[buffer_idx] = result.sections.size();
     }
   }
