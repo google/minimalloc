@@ -2,7 +2,7 @@
 <img src="img/minimalloc.png">
 </p>
 
-Source code for our [ASPLOS 2024](https://www.asplos-conference.org/asplos2024/) paper, "***MiniMalloc: A Lightweight Memory Allocator for Hardware-Accelerated Machine Learning***."
+Source code for our [ASPLOS 2023](https://www.asplos-conference.org/asplos2023/) paper, "***MiniMalloc: A Lightweight Memory Allocator for Hardware-Accelerated Machine Learning***."
 
 ## Setup
 
@@ -42,13 +42,13 @@ b5,0,21,4,0
 ## How to cite?
 
 <pre>
-@inproceedings{Moffitt2024,
+@inproceedings{Moffitt2023,
   title = {Mini{M}alloc: A Lightweight Memory Allocator for Hardware-Accelerated Machine Learning},
-  booktitle = {Proceedings of the 29th International Conference on Architectural Support for Programming Languages and Operating Systems},
-  volume = {1},
+  booktitle = {Proceedings of the 28th International Conference on Architectural Support for Programming Languages and Operating Systems},
+  volume = {4},
   author = {Moffitt, Michael D.},
-  year = {2024},
-  series = {ASPLOS 2024}
+  year = {2023},
+  series = {ASPLOS 2023}
 }
 </pre>
 
