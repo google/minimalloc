@@ -79,14 +79,20 @@ class SolverImpl {
       backtracks_(*backtracks), cancelled_(*cancelled) {}
 
   absl::StatusOr<Solution> Solve() {
-    assignment_.offsets.resize(problem_.buffers.size(), kNoOffset);
-    solution_.offsets.resize(problem_.buffers.size(), kNoOffset);
-    min_offsets_.resize(problem_.buffers.size());
+    const auto num_buffers = problem_.buffers.size();
+    assignment_.offsets.resize(num_buffers, kNoOffset);
+    solution_.offsets.resize(num_buffers, kNoOffset);
+    min_offsets_.resize(num_buffers);
     section_data_.resize(sweep_result_.sections.size());
-    for (SectionIdx s_idx = 0; s_idx < sweep_result_.sections.size(); ++s_idx) {
-      const Section& section = sweep_result_.sections[s_idx];
-      for (const BufferIdx buffer_idx : section) {
-        section_data_[s_idx].total += problem_.buffers[buffer_idx].min_size();
+    for (BufferIdx buffer_idx = 0; buffer_idx < num_buffers; ++buffer_idx) {
+      const BufferData& buffer_data = sweep_result_.buffer_data[buffer_idx];
+      for (const SectionSpan& section_span : buffer_data.section_spans) {
+        const SectionRange& section_range = section_span.section_range;
+        const Window& window = section_span.window;
+        for (SectionIdx s_idx = section_range.lower();
+            s_idx < section_range.upper(); ++s_idx) {
+          section_data_[s_idx].total += window.upper() - window.lower();
+        }
       }
     }
     cuts_ = sweep_result_.CalculateCuts();
@@ -178,19 +184,19 @@ class SolverImpl {
       const absl::flat_hash_set<SectionIdx>& affected_sections,
       BufferIdx buffer_idx) {
     std::vector<SectionChange> section_changes;
-    const Buffer& buffer = problem_.buffers[buffer_idx];
     const Offset offset = assignment_.offsets[buffer_idx];
-    const Offset height = offset + buffer.size;
     // For any section this buffer resides in, bump up the floor & drop the sum.
     const BufferData& buffer_data = sweep_result_.buffer_data[buffer_idx];
     for (const SectionSpan& section_span : buffer_data.section_spans) {
       const SectionRange& section_range = section_span.section_range;
+      const Window& window = section_span.window;
+      const Offset height = offset + window.upper();
       for (SectionIdx s_idx = section_range.lower();
           s_idx < section_range.upper(); ++s_idx) {
         section_changes.push_back(
             {.section_idx = s_idx, .floor = section_data_[s_idx].floor});
         section_data_[s_idx].floor = height;
-        section_data_[s_idx].total -= buffer.min_size();
+        section_data_[s_idx].total -= window.upper() - window.lower();
       }
     }
     // The floor of any section cannot be lower than its lowest minimum offset.
@@ -218,13 +224,13 @@ class SolverImpl {
       section_data_[c->section_idx].floor = c->floor;
     }
     // For any section this buffer resides in, increase the sum.
-    const Buffer& buffer = problem_.buffers[buffer_idx];
     const BufferData& buffer_data = sweep_result_.buffer_data[buffer_idx];
     for (const SectionSpan& section_span : buffer_data.section_spans) {
       const SectionRange& section_range = section_span.section_range;
+      const Window& window = section_span.window;
       for (SectionIdx s_idx = section_range.lower();
           s_idx < section_range.upper(); ++s_idx) {
-        section_data_[s_idx].total += buffer.min_size();
+        section_data_[s_idx].total += window.upper() - window.lower();
       }
     }
   }
@@ -276,9 +282,9 @@ class SolverImpl {
         s_idx < partition.section_range.upper(); ++s_idx) {
       // Note: by construction, the given section_data object is guaranteed to
       // have an element for every index in the partition's section_range.
-      auto [floor, sum] = section_data_[s_idx];
+      auto [floor, total] = section_data_[s_idx];
       if (params_.monotonic_floor) floor = std::max(offset, floor);
-      if (params_.section_inference) floor += sum;
+      if (params_.section_inference) floor += total;
       if (problem_.capacity < floor) return false;
     }
     return true;

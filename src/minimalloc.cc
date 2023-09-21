@@ -105,16 +105,6 @@ std::optional<int64_t> Buffer::effective_size(const Buffer& x) const {
   return effective_size;
 }
 
-int64_t Buffer::min_size() const {
-  int64_t min_size = size;
-  for (const Gap& gap : gaps) {
-    if (gap.window) {
-      min_size = std::min(min_size, gap.window->upper() - gap.window->lower());
-    }
-  }
-  return min_size;
-}
-
 absl::StatusOr<Solution> Problem::strip_solution() {
   Solution solution;
   for (Buffer& buffer : buffers) {
