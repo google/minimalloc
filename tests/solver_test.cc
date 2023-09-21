@@ -216,6 +216,39 @@ TEST_P(SolverTest, Tetris) {
   test_feasible(problem);
 }
 
+TEST_P(SolverTest, Stairs) {
+  const Problem problem = {
+    .buffers = {
+        {.lifespan = {0, 108}, .size = 30, .gaps = {{.lifespan = {36, 72},
+                                                     .window = {{10, 30}}},
+                                                    {.lifespan = {72, 108},
+                                                     .window = {{20, 30}}}}},
+        {.lifespan = {36, 144}, .size = 50, .gaps = {{.lifespan = {36, 72},
+                                                      .window = {{20, 30}}},
+                                                     {.lifespan = {72, 108},
+                                                      .window = {{10, 40}}}}},
+        {.lifespan = {84, 144}, .size = 42, .gaps = {{.lifespan = {114, 129},
+                                                      .window = {{0, 28}}},
+                                                     {.lifespan = {129, 144},
+                                                      .window = {{0, 14}}}}},
+        {.lifespan = {84, 129}, .size = 42, .gaps = {{.lifespan = {99, 114},
+                                                      .window = {{14, 42}}},
+                                                     {.lifespan = {114, 129},
+                                                      .window = {{28, 42}}}}},
+        {.lifespan = {99, 144}, .size = 70, .gaps = {{.lifespan = {99, 114},
+                                                      .window = {{28, 42}}},
+                                                     {.lifespan = {114, 129},
+                                                      .window = {{14, 56}}}}},
+        {.lifespan = {0, 144}, .size = 30, .gaps = {{.lifespan = {72, 108},
+                                                     .window = {{0, 20}}},
+                                                    {.lifespan = {108, 144},
+                                                     .window = {{0, 10}}}}},
+     },
+    .capacity = 144
+  };
+  test_feasible(problem);
+}
+
 TEST(SolverTest, CountsBacktracks) {
   const Problem problem = {
     .buffers = {
