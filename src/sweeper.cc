@@ -25,25 +25,18 @@ limitations under the License.
 
 namespace minimalloc {
 
-namespace {
+bool SweepPoint::operator==(const SweepPoint& x) const {
+  return buffer_idx == x.buffer_idx && time_value == x.time_value &&
+         point_type == x.point_type && window == x.window &&
+         endpoint == x.endpoint;
+}
 
-enum PointType { kRight, kLeft };
-
-struct Point {
-  BufferIdx buffer_idx;
-  TimeValue time_value;
-  PointType point_type;
-  Window window;
-  bool endpoint;
-  bool operator<(const Point& x) const {
-    // First, order by time, then direction (right vs. left), then buffer idx.
-    if (time_value != x.time_value) return time_value < x.time_value;
-    if (point_type != x.point_type) return point_type < x.point_type;
-    return buffer_idx < x.buffer_idx;
-  }
-};
-
-}  // namespace
+bool SweepPoint::operator<(const SweepPoint& x) const {
+  // First, order by time, then direction (right vs. left), then buffer idx.
+  if (time_value != x.time_value) return time_value < x.time_value;
+  if (point_type != x.point_type) return point_type < x.point_type;
+  return buffer_idx < x.buffer_idx;
+}
 
 bool SectionSpan::operator==(const SectionSpan& x) const {
   return section_range == x.section_range && window == x.window;
@@ -74,28 +67,28 @@ bool SweepResult::operator==(const SweepResult& x) const {
          buffer_data == x.buffer_data;
 }
 
-// For a given problem, places all buffer start times into a priority queue.
-std::vector<Point> CreatePoints(const Problem& problem) {
-  std::vector<Point> points;
+// For a given problem, places all start & end times into a list sorted by time
+// value, then point type, then buffer index.  For a buffer with gaps, there are
+// six *potential* points of interest:
+//
+//   A        BC       DE        F
+//             |-------|
+//   |--------||  gap  ||--------|
+//             |-------|
+//
+// Point 'A' may not need to be created if it's co-occurrent with point 'B',
+// points 'C' and 'D' may not need to be created unless there's a window, etc.
+std::vector<SweepPoint> CreatePoints(const Problem& problem) {
+  std::vector<SweepPoint> points;
   points.reserve(problem.buffers.size() * 2);  // Reserve 2 spots per buffer.
   for (auto buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
     const Buffer& buffer = problem.buffers[buffer_idx];
     Window window = {0, buffer.size};
-    std::optional<Point> point = {{.buffer_idx = buffer_idx,  // Point 'A'
-                                   .time_value = buffer.lifespan.lower(),
-                                   .point_type = kLeft,
-                                   .window = window,
-                                   .endpoint = true}};
-    // There are six *potential* points of interest for a gap:
-    //
-    //   A        BC       DE        F
-    //             |-------|
-    //   |--------||  gap  ||--------|
-    //             |-------|
-    //
-    // Point 'A' may not need to be created if it's co-occurrent with point 'B',
-    // points 'C' and 'D' may not need to be created unless there's a window,
-    // and so on.
+    std::optional<SweepPoint> point = {{.buffer_idx = buffer_idx,  // Point 'A'
+                                        .time_value = buffer.lifespan.lower(),
+                                        .point_type = kLeft,
+                                        .window = window,
+                                        .endpoint = true}};
     for (const Gap& gap : buffer.gaps) {
       if (gap.window) {  // This gap has a window
         bool endpoint = false;
@@ -166,14 +159,14 @@ std::vector<Point> CreatePoints(const Problem& problem) {
 SweepResult Sweep(const Problem& problem) {
   SweepResult result;
   const auto num_buffers = problem.buffers.size();
-  const std::vector<Point> points = CreatePoints(problem);
+  const std::vector<SweepPoint> points = CreatePoints(problem);
   Section actives, alive;
   TimeValue last_section_time = -1;
   SectionIdx last_section_idx = 0;
   // Create a reverse index (from buffers to sections) for quick lookup.
   result.buffer_data.resize(num_buffers);
   std::vector<SectionIdx> buffer_idx_to_section_start(num_buffers, -1);
-  for (const Point& point : points) {
+  for (const SweepPoint& point : points) {
     const BufferIdx buffer_idx = point.buffer_idx;
     const Buffer& buffer = problem.buffers[buffer_idx];
     if (last_section_time == -1) last_section_time = point.time_value;

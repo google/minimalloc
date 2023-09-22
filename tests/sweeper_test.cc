@@ -41,6 +41,26 @@ namespace {
 //                                     //
 /////////////////////////////////////////
 
+TEST(CreatePointsTest, NoOverlap) {
+  const Problem problem = {
+      .buffers = {
+          {.lifespan = {0, 1}, .size = 2},
+          {.lifespan = {1, 2}, .size = 1},
+          {.lifespan = {2, 3}, .size = 1},
+      }
+  };
+  EXPECT_EQ(
+      CreatePoints(problem),
+      (std::vector<SweepPoint>{
+          {/*buffer_idx*/ 0, /*time_value*/ 0, kLeft, {0, 2}, true},
+          {/*buffer_idx*/ 0, /*time_value*/ 1, kRight, {0, 2}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 1, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 2, kRight, {0, 1}, true},
+          {/*buffer_idx*/ 2, /*time_value*/ 2, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 2, /*time_value*/ 3, kRight, {0, 1}, true},
+      }));
+}
+
 TEST(SweeperTest, NoOverlap) {
   const Problem problem = {
       .buffers = {
@@ -94,6 +114,26 @@ TEST(CalculateCutsTest, NoOverlap) {
 //             |======|======|======|======|  //
 //                                            //
 ////////////////////////////////////////////////
+
+TEST(CreatePointsTest, WithOverlap) {
+  const Problem problem = {
+      .buffers = {
+          {.lifespan = {0, 1}, .size = 2},
+          {.lifespan = {1, 3}, .size = 1},
+          {.lifespan = {2, 4}, .size = 1},
+      }
+  };
+  EXPECT_EQ(
+      CreatePoints(problem),
+      (std::vector<SweepPoint>{
+          {/*buffer_idx*/ 0, /*time_value*/ 0, kLeft, {0, 2}, true},
+          {/*buffer_idx*/ 0, /*time_value*/ 1, kRight, {0, 2}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 1, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 2, /*time_value*/ 2, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 3, kRight, {0, 1}, true},
+          {/*buffer_idx*/ 2, /*time_value*/ 4, kRight, {0, 1}, true},
+      }));
+}
 
 TEST(SweeperTest, WithOverlap) {
   const Problem problem = {
@@ -151,6 +191,26 @@ TEST(CalculateCutsTest, WithOverlap) {
 //             |======|======|======|  //
 //                                     //
 /////////////////////////////////////////
+
+TEST(CreatePointsTest, TwoBuffersEndAtSameTime) {
+  const Problem problem = {
+      .buffers = {
+          {.lifespan = {0, 1}, .size = 2},
+          {.lifespan = {1, 3}, .size = 1},
+          {.lifespan = {2, 3}, .size = 1},
+      }
+  };
+  EXPECT_EQ(
+      CreatePoints(problem),
+      (std::vector<SweepPoint>{
+          {/*buffer_idx*/ 0, /*time_value*/ 0, kLeft, {0, 2}, true},
+          {/*buffer_idx*/ 0, /*time_value*/ 1, kRight, {0, 2}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 1, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 2, /*time_value*/ 2, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 3, kRight, {0, 1}, true},
+          {/*buffer_idx*/ 2, /*time_value*/ 3, kRight, {0, 1}, true},
+      }));
+}
 
 TEST(SweeperTest, TwoBuffersEndAtSameTime) {
   const Problem problem = {
@@ -210,6 +270,29 @@ TEST(CalculateCutsTest, TwoBuffersEndAtSameTime) {
 //             |======|======|======|======|  //
 //                                            //
 ////////////////////////////////////////////////
+
+TEST(CreatePointsTest, SuperLongBufferPreventsPartitioning) {
+  const Problem problem = {
+      .buffers = {
+          {.lifespan = {0, 1}, .size = 2},
+          {.lifespan = {1, 3}, .size = 1},
+          {.lifespan = {2, 4}, .size = 1},
+          {.lifespan = {0, 4}, .size = 1},
+      }
+  };
+  EXPECT_EQ(
+      CreatePoints(problem),
+      (std::vector<SweepPoint>{
+          {/*buffer_idx*/ 0, /*time_value*/ 0, kLeft, {0, 2}, true},
+          {/*buffer_idx*/ 3, /*time_value*/ 0, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 0, /*time_value*/ 1, kRight, {0, 2}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 1, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 2, /*time_value*/ 2, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 3, kRight, {0, 1}, true},
+          {/*buffer_idx*/ 2, /*time_value*/ 4, kRight, {0, 1}, true},
+          {/*buffer_idx*/ 3, /*time_value*/ 4, kRight, {0, 1}, true},
+      }));
+}
 
 TEST(SweeperTest, SuperLongBufferPreventsPartitioning) {
   const Problem problem = {
@@ -274,6 +357,26 @@ TEST(CalculateCutsTest, SuperLongBufferPreventsPartitioning) {
 //                                     //
 /////////////////////////////////////////
 
+TEST(CreatePointsTest, BuffersOutOfOrder) {
+  const Problem problem = {
+      .buffers = {
+          {.lifespan = {2, 3}, .size = 1},
+          {.lifespan = {1, 3}, .size = 1},
+          {.lifespan = {0, 1}, .size = 2},
+      }
+  };
+  EXPECT_EQ(
+      CreatePoints(problem),
+      (std::vector<SweepPoint>{
+          {/*buffer_idx*/ 2, /*time_value*/ 0, kLeft, {0, 2}, true},
+          {/*buffer_idx*/ 2, /*time_value*/ 1, kRight, {0, 2}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 1, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 0, /*time_value*/ 2, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 0, /*time_value*/ 3, kRight, {0, 1}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 3, kRight, {0, 1}, true},
+      }));
+}
+
 TEST(SweeperTest, BuffersOutOfOrder) {
   const Problem problem = {
       .buffers = {
@@ -332,6 +435,32 @@ TEST(CalculateCutsTest, BuffersOutOfOrder) {
 //             |======|======|======|======|  //
 //                                            //
 ////////////////////////////////////////////////
+
+TEST(CreatePointsTest, WithGaps) {
+  const Problem problem = {
+      .buffers = {
+          {.lifespan = {4, 7}, .size = 1, .gaps = {{.lifespan = {5, 6}}}},
+          {.lifespan = {5, 8}, .size = 1, .gaps = {{.lifespan = {6, 7}}}},
+          {.lifespan = {4, 8}, .size = 1, .gaps = {{.lifespan = {5, 7}}}},
+      }
+  };
+  EXPECT_EQ(
+      CreatePoints(problem),
+      (std::vector<SweepPoint>{
+          {/*buffer_idx*/ 0, /*time_value*/ 4, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 2, /*time_value*/ 4, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 0, /*time_value*/ 5, kRight, {0, 1}, false},
+          {/*buffer_idx*/ 2, /*time_value*/ 5, kRight, {0, 1}, false},
+          {/*buffer_idx*/ 1, /*time_value*/ 5, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 6, kRight, {0, 1}, false},
+          {/*buffer_idx*/ 0, /*time_value*/ 6, kLeft, {0, 1}, false},
+          {/*buffer_idx*/ 0, /*time_value*/ 7, kRight, {0, 1}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 7, kLeft, {0, 1}, false},
+          {/*buffer_idx*/ 2, /*time_value*/ 7, kLeft, {0, 1}, false},
+          {/*buffer_idx*/ 1, /*time_value*/ 8, kRight, {0, 1}, true},
+          {/*buffer_idx*/ 2, /*time_value*/ 8, kRight, {0, 1}, true},
+      }));
+}
 
 TEST(SweeperTest, WithGaps) {
   const Problem problem = {
@@ -397,6 +526,30 @@ TEST(CalculateCutsTest, WithGaps) {
 //             |======|======|======|======|  //
 //                                            //
 ////////////////////////////////////////////////
+
+TEST(CreatePointsTest, Tetris) {
+  const Problem problem = {
+    .buffers = {
+        {.lifespan = {4, 8}, .size = 2, .gaps = {{.lifespan = {4, 6},
+                                                  .window = {{0, 1}}}}},
+        {.lifespan = {4, 8}, .size = 2, .gaps = {{.lifespan = {6, 8},
+                                                  .window = {{1, 2}}}}},
+     },
+    .capacity = 3
+  };
+  EXPECT_EQ(
+      CreatePoints(problem),
+      (std::vector<SweepPoint>{
+          {/*buffer_idx*/ 0, /*time_value*/ 4, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 4, kLeft, {0, 2}, true},
+          {/*buffer_idx*/ 0, /*time_value*/ 6, kRight, {0, 1}, false},
+          {/*buffer_idx*/ 1, /*time_value*/ 6, kRight, {0, 2}, false},
+          {/*buffer_idx*/ 0, /*time_value*/ 6, kLeft, {0, 2}, false},
+          {/*buffer_idx*/ 1, /*time_value*/ 6, kLeft, {1, 2}, false},
+          {/*buffer_idx*/ 0, /*time_value*/ 8, kRight, {0, 2}, true},
+          {/*buffer_idx*/ 1, /*time_value*/ 8, kRight, {1, 2}, true},
+      }));
+}
 
 TEST(SweeperTest, Tetris) {
   const Problem problem = {

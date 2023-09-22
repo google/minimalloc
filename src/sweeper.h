@@ -159,6 +159,22 @@ struct SweepResult {
   bool operator==(const SweepResult& x) const;
 };
 
+enum SweepPointType { kRight, kLeft };
+
+struct SweepPoint {
+  BufferIdx buffer_idx;
+  TimeValue time_value;
+  SweepPointType point_type;
+  Window window;
+  bool endpoint;
+  bool operator==(const SweepPoint& x) const;
+  bool operator<(const SweepPoint& x) const;
+};
+
+// For a given problem, places all start & end times into a list sorted by time
+// value, then point type, then buffer index.
+std::vector<SweepPoint> CreatePoints(const Problem& problem);
+
 SweepResult Sweep(const Problem& problem);
 
 }  // namespace minimalloc
