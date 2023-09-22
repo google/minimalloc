@@ -175,6 +175,9 @@ struct SweepPoint {
 // value, then point type, then buffer index.
 std::vector<SweepPoint> CreatePoints(const Problem& problem);
 
+// Maintains an "active" set of buffers to determine disjoint partitions.  For
+// each partition, records the list of buffers + pairwise overlaps + unique
+// cross sections.
 SweepResult Sweep(const Problem& problem);
 
 }  // namespace minimalloc

@@ -153,9 +153,6 @@ std::vector<SweepPoint> CreatePoints(const Problem& problem) {
   return points;
 }
 
-// Maintains an "active" set of buffers to determine disjoint partitions.  For
-// each partition, records the list of buffers + pairwise overlaps + unique
-// cross sections.
 SweepResult Sweep(const Problem& problem) {
   SweepResult result;
   const auto num_buffers = problem.buffers.size();
