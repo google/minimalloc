@@ -20,7 +20,6 @@ limitations under the License.
 #include <stdint.h>
 
 #include <optional>
-#include <ostream>
 #include <string>
 #include <vector>
 
