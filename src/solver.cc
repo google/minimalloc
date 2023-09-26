@@ -494,6 +494,11 @@ absl::StatusOr<Solution> Solver::Solve(const Problem& problem) {
   const absl::Time start_time = absl::Now();
   backtracks_ = 0;  // Reset the backtrack counter.
   cancelled_ = false;
+  return SolveWithStartTime(problem, start_time);
+}
+
+absl::StatusOr<Solution> Solver::SolveWithStartTime(const Problem& problem,
+                                                    absl::Time start_time) {
   const SweepResult sweep_result = Sweep(problem);
   SolverImpl solver_impl(
       params_, start_time, problem, sweep_result, &backtracks_, cancelled_);
@@ -517,10 +522,7 @@ absl::StatusOr<std::vector<BufferIdx>>
     for (BufferIdx idx = 0; idx < problem.buffers.size(); ++idx) {
       if (include[idx]) subproblem.buffers.push_back(problem.buffers[idx]);
     }
-    const SweepResult sweep_result = Sweep(subproblem);
-    SolverImpl solver_impl(params_, start_time, subproblem, sweep_result,
-                           &backtracks_, cancelled_);
-    auto solution = solver_impl.Solve();
+    auto solution = SolveWithStartTime(subproblem, start_time);
     if (absl::IsDeadlineExceeded(solution.status())) return solution.status();
     if ((include[buffer_idx] = solution.ok())) subset.push_back(buffer_idx);
   }
