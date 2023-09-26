@@ -103,6 +103,7 @@ class PreorderingComparator {
 class Solver {
  public:
   Solver();
+  virtual ~Solver() = default;
   explicit Solver(const SolverParams& params);
   absl::StatusOr<Solution> Solve(const Problem& problem);
 
@@ -117,6 +118,9 @@ class Solver {
       const Problem& problem);
 
  protected:
+  virtual absl::StatusOr<Solution> SolveWithStartTime(const Problem& problem,
+                                                      absl::Time start_time);
+
   const SolverParams params_;
   int64_t backtracks_ = 0;  // A counter that maintains backtrack count.
   std::atomic<bool> cancelled_ = false;
