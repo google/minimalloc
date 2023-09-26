@@ -17,6 +17,10 @@ limitations under the License.
 #ifndef MINIMALLOC_SRC_SOLVER_H_
 #define MINIMALLOC_SRC_SOLVER_H_
 
+#include <cstdint>
+#include <string>
+#include <vector>
+
 #include "minimalloc.h"
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
