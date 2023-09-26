@@ -491,10 +491,9 @@ Solver::Solver(const SolverParams& params) : params_(params) {}
 // Calculates partitions, and then solves each subproblem independently.  If
 // any subproblem is found to be infeasible, no further search is performed.
 absl::StatusOr<Solution> Solver::Solve(const Problem& problem) {
-  const absl::Time start_time = absl::Now();
   backtracks_ = 0;  // Reset the backtrack counter.
   cancelled_ = false;
-  return SolveWithStartTime(problem, start_time);
+  return SolveWithStartTime(problem, absl::Now());
 }
 
 absl::StatusOr<Solution> Solver::SolveWithStartTime(const Problem& problem,
