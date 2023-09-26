@@ -19,6 +19,7 @@ limitations under the License.
 #include <limits.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <limits>
 #include <vector>
@@ -74,9 +75,9 @@ class SolverImpl {
  public:
   SolverImpl(const SolverParams& params, const absl::Time start_time,
       const Problem& problem, const SweepResult& sweep_result,
-      int64_t* backtracks, bool* cancelled) : params_(params),
+      int64_t* backtracks, std::atomic<bool>& cancelled) : params_(params),
       start_time_(start_time), problem_(problem), sweep_result_(sweep_result),
-      backtracks_(*backtracks), cancelled_(*cancelled) {}
+      backtracks_(*backtracks), cancelled_(cancelled) {}
 
   absl::StatusOr<Solution> Solve() {
     const auto num_buffers = problem_.buffers.size();
@@ -453,7 +454,7 @@ class SolverImpl {
   const Problem& problem_;
   const SweepResult& sweep_result_;
   int64_t& backtracks_;
-  bool& cancelled_;
+  std::atomic<bool>& cancelled_;
 
   Solution assignment_;
   Solution solution_;
@@ -495,7 +496,7 @@ absl::StatusOr<Solution> Solver::Solve(const Problem& problem) {
   cancelled_ = false;
   const SweepResult sweep_result = Sweep(problem);
   SolverImpl solver_impl(
-      params_, start_time, problem, sweep_result, &backtracks_, &cancelled_);
+      params_, start_time, problem, sweep_result, &backtracks_, cancelled_);
   return solver_impl.Solve();
 }
 
@@ -518,7 +519,7 @@ absl::StatusOr<std::vector<BufferIdx>>
     }
     const SweepResult sweep_result = Sweep(subproblem);
     SolverImpl solver_impl(params_, start_time, subproblem, sweep_result,
-                           &backtracks_, &cancelled_);
+                           &backtracks_, cancelled_);
     auto solution = solver_impl.Solve();
     if (absl::IsDeadlineExceeded(solution.status())) return solution.status();
     if ((include[buffer_idx] = solution.ok())) subset.push_back(buffer_idx);
