@@ -116,7 +116,7 @@ class Solver {
   absl::StatusOr<std::vector<BufferIdx>> ComputeIrreducibleInfeasibleSubset(
       const Problem& problem);
 
- private:
+ protected:
   const SolverParams params_;
   int64_t backtracks_ = 0;  // A counter that maintains backtrack count.
   std::atomic<bool> cancelled_ = false;
