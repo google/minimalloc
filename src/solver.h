@@ -17,6 +17,7 @@ limitations under the License.
 #ifndef MINIMALLOC_SRC_SOLVER_H_
 #define MINIMALLOC_SRC_SOLVER_H_
 
+#include <atomic>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -118,7 +119,7 @@ class Solver {
  private:
   const SolverParams params_;
   int64_t backtracks_ = 0;  // A counter that maintains backtrack count.
-  bool cancelled_ = false;
+  std::atomic<bool> cancelled_ = false;
 };
 
 }  // namespace minimalloc
