@@ -25,7 +25,7 @@ b5,0,21,4
 ## Example usage
 
 <pre>
-$ ./minimalloc --capacity=12 --input=benchmarks/examples/input.12.csv --output=output.csv
+$ ./minimalloc --capacity=12 --input=benchmarks/examples/input.12.csv --output=output.12.csv
 </pre>
 
 ## Example output file
