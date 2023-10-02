@@ -2,7 +2,7 @@
 <img src="img/minimalloc.png">
 </p>
 
-Source code for our [ASPLOS 2023](https://www.asplos-conference.org/asplos2023/) paper, "***MiniMalloc: A Lightweight Memory Allocator for Hardware-Accelerated Machine Learning***."
+Source code for our [ASPLOS 2023](https://www.asplos-conference.org/asplos2023/) paper, "***[MiniMalloc: A Lightweight Memory Allocator for Hardware-Accelerated Machine Learning](https://doi.org/10.1145/3623278.3624752)***."
 
 ## Setup
 
@@ -48,7 +48,9 @@ b5,0,21,4,0
   volume = {4},
   author = {Moffitt, Michael D.},
   year = {2023},
-  series = {ASPLOS 2023}
+  series = {ASPLOS 2023},
+  url = {https://doi.org/10.1145/3623278.3624752},
+  doi = {10.1145/3623278.3624752},
 }
 </pre>
 
