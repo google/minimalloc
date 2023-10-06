@@ -74,7 +74,7 @@ struct SolverParams {
   MonotonicFloorParam monotonic_floor = true;
 
   // The static preordering heuristics to attempt.
-  const std::vector<PreorderingHeuristic> preordering_heuristics =
+  std::vector<PreorderingHeuristic> preordering_heuristics =
       {"WAT", "TAW", "TWA"};
 };
 
