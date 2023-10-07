@@ -88,9 +88,9 @@ int main(int argc, char* argv[]) {
       << absl::ToDoubleSeconds(end_time - start_time);
   if (!solution.ok()) return 1;
   if (absl::GetFlag(FLAGS_validate)) {
-    minimalloc::ValidationResult valdation_result =
+    minimalloc::ValidationResult validation_result =
         minimalloc::Validate(*problem, *solution);
-    std::cerr << (valdation_result == minimalloc::ValidationResult::kGood
+    std::cerr << (validation_result == minimalloc::ValidationResult::kGood
         ? "PASS" : "FAIL") << std::endl;
   }
   std::string contents = minimalloc::ToCsv(*problem, &(*solution));
