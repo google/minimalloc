@@ -8,7 +8,7 @@ Source code for our [ASPLOS 2023](https://www.asplos-conference.org/asplos2023/)
 
 An increasing number of deep learning workloads are being supported by *hardware acceleration*.  In order to unlock the efficiency of a hardware accelerator, a machine learning model must first be mapped onto its various internal components by way of a *compiler*.  One especially important problem faced by a production-class compiler is that of *memory allocation*, whereby a set of buffers with predefined lifespans are mapped onto offsets in global memory.  Since this allocation is performed statically, the compiler has the freedom to place buffers strategically, but must nevertheless wrestle with a combinatorial explosion in the number of assignment possibilities.
 
-**MiniMalloc** is a state-of-the-art algorithm designed specifically for static memory allocation that uses several novel search techiques to solve such problems effectively and efficiently.
+**MiniMalloc** is a state-of-the-art algorithm designed specifically for static memory allocation that uses several novel search techiques to solve such problems efficiently and effectively.
 
 ## How it works
 
