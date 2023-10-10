@@ -14,7 +14,9 @@ An increasing number of deep learning workloads are being supported by *hardware
 
 A key insight motivating our methodology is the discovery of a specific category of solutions -- which we call *canonical solutions* -- that correspond to the members of an algebraic lattice.  By limiting our exploration to the subset of canonical solutions, we can dramatically reduce the size of the search space while simultaneously ensuring that our algorithm remains sound and complete.  We also employ a new spatial inference technique that takes advantage of this special structure, allowing our solver to backtrack much earlier than otherwise possible.  Finally, we implement a new mechanism for detecting and eliminating dominated solutions from consideration.
 
+<p align="center">
 <img src="img/lattice.gif">
+</p>
 
 ## Setup
 
