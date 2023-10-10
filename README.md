@@ -4,6 +4,18 @@
 
 Source code for our [ASPLOS 2023](https://www.asplos-conference.org/asplos2023/) paper, "***[MiniMalloc: A Lightweight Memory Allocator for Hardware-Accelerated Machine Learning](https://doi.org/10.1145/3623278.3624752)***."
 
+## Overview
+
+An increasing number of deep learning workloads are being supported by *hardware acceleration*.  In order to unlock the efficiency of a hardware accelerator, a machine learning model must first be mapped onto its various internal components by way of a *compiler*.  One especially important problem faced by a production-class compiler is that of *memory allocation*, whereby a set of buffers with predefined lifespans are mapped onto offsets in global memory.  Since this allocation is performed statically, the compiler has the freedom to place buffers strategically, but must nevertheless wrestle with a combinatorial explosion in the number of assignment possibilities.
+
+**MiniMalloc** is a state-of-the-art solver designed specifically for static memory allocation that uses several novel search techiques to solve such problems effectively and efficiently.
+
+## How it works
+
+A key insight motivating our methodology is the discovery of a specific category of solutions -- which we call *canonical solutions* -- that correspond to the members of an algebraic lattice.  By limiting our exploration to the subset of canonical solutions, we can dramatically reduce the size of the search space while simultaneously ensuring that our algorithm remains sound and complete.  We also employ a new spatial inference technique that takes advantage of this special structure, allowing our solver to backtrack much earlier than otherwise possible.  Finally, we implement a new mechanism for detecting and eliminating dominated solutions from consideration.
+
+<img src="img/lattice.gif">
+
 ## Setup
 
 <pre>
