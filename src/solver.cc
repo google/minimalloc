@@ -22,6 +22,7 @@ limitations under the License.
 #include <atomic>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <vector>
 
 #include "absl/algorithm/container.h"
@@ -237,35 +238,37 @@ class SolverImpl {
   }
 
   // Updates min offset data, given that 'buffer_idx' is the next to be placed.
-  std::vector<OffsetChange> UpdateMinOffsets(
+  std::optional<std::vector<OffsetChange>> UpdateMinOffsets(
       BufferIdx buffer_idx,
       absl::flat_hash_set<SectionIdx>& affected_sections) {
+    bool hatless = true;
     std::vector<OffsetChange> offset_changes;
     const Offset offset = assignment_.offsets[buffer_idx];
     // For any overlap this buffer participates in, bump up its minimum offset.
     const std::vector<BufferData>& buffer_data = sweep_result_.buffer_data;
     for (const Overlap& overlap : buffer_data[buffer_idx].overlaps) {
       const BufferIdx other_idx = overlap.buffer_idx;
+      if (assignment_.offsets[other_idx] != kNoOffset) continue;
+      hatless = false;
       const Offset height = offset + overlap.effective_size;
-      if (assignment_.offsets[other_idx] == kNoOffset) {
-        if (min_offsets_[other_idx] >= height) continue;
-        offset_changes.push_back(
-            {.buffer_idx = other_idx, .min_offset = min_offsets_[other_idx]});
-        min_offsets_[other_idx] = height;
-        const Buffer& other_buffer = problem_.buffers[other_idx];
-        Offset diff = min_offsets_[other_idx] % other_buffer.alignment;
-        if (diff > 0) min_offsets_[other_idx] += other_buffer.alignment - diff;
-        if (!params_.unallocated_floor) continue;  // Mutation safe.
-        const BufferData& buffer_data = sweep_result_.buffer_data[other_idx];
-        for (const SectionSpan& section_span : buffer_data.section_spans) {
-          const SectionRange& section_range = section_span.section_range;
-          for (SectionIdx s_idx = section_range.lower();
-               s_idx < section_range.upper(); ++s_idx) {
-            affected_sections.insert(s_idx);
-          }
+      if (min_offsets_[other_idx] >= height) continue;
+      offset_changes.push_back(
+          {.buffer_idx = other_idx, .min_offset = min_offsets_[other_idx]});
+      min_offsets_[other_idx] = height;
+      const Buffer& other_buffer = problem_.buffers[other_idx];
+      Offset diff = min_offsets_[other_idx] % other_buffer.alignment;
+      if (diff > 0) min_offsets_[other_idx] += other_buffer.alignment - diff;
+      if (!params_.unallocated_floor) continue;  // Mutation safe.
+      const BufferData& buffer_data = sweep_result_.buffer_data[other_idx];
+      for (const SectionSpan& section_span : buffer_data.section_spans) {
+        const SectionRange& section_range = section_span.section_range;
+        for (SectionIdx s_idx = section_range.lower();
+             s_idx < section_range.upper(); ++s_idx) {
+          affected_sections.insert(s_idx);
         }
       }
     }
+    if (hatless) return std::nullopt;
     return offset_changes;
   }
 
@@ -361,8 +364,7 @@ class SolverImpl {
       }
       assignment_.offsets[buffer_idx] = offset;
       absl::flat_hash_set<SectionIdx> affected_sections;
-      std::vector<OffsetChange> offset_changes =
-          UpdateMinOffsets(buffer_idx, affected_sections);
+      auto offset_changes = UpdateMinOffsets(buffer_idx, affected_sections);
       std::vector<SectionChange> section_changes =
           UpdateSectionData(affected_sections, buffer_idx);
       absl::StatusCode status_code = absl::StatusCode::kNotFound;
@@ -375,10 +377,11 @@ class SolverImpl {
                     preordering, ordering, offset, preorder_idx);
       }
       RestoreSectionData(section_changes, buffer_idx);
-      RestoreMinOffsets(offset_changes);
+      if (offset_changes) RestoreMinOffsets(*offset_changes);
       assignment_.offsets[buffer_idx] = kNoOffset;  // Mark it unallocated.
       // If a feasible solution *or* timeout, abort search.
       if (status_code != absl::StatusCode::kNotFound) return status_code;
+      if (!offset_changes && params_.hatless_pruning) break;
     }
     ++backtracks_;
     return absl::StatusCode::kNotFound;  // No feasible solution found.

@@ -36,6 +36,7 @@ using UnallocatedFloorParam = bool;
 using StaticPreorderingParam = bool;
 using DynamicDecompositionParam = bool;
 using MonotonicFloorParam = bool;
+using HatlessPruningParam = bool;
 using PreorderingHeuristic = std::string;
 
 // Various settings that enable / disable certain advanced search & inference
@@ -72,6 +73,9 @@ struct SolverParams {
 
   // Requires that the floor of the entire solution increase monotonically.
   MonotonicFloorParam monotonic_floor = true;
+
+  // Prunes alternate solutions whenever a buffer has nothing overhead.
+  HatlessPruningParam hatless_pruning = true;
 
   // The static preordering heuristics to attempt.
   std::vector<PreorderingHeuristic> preordering_heuristics =

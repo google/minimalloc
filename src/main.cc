@@ -54,6 +54,8 @@ ABSL_FLAG(bool, static_preordering, true, "Statically preorders buffers.");
 ABSL_FLAG(bool, dynamic_decomposition, true, "Dynamically decomposes buffers.");
 ABSL_FLAG(bool, monotonic_floor, true,
           "Requires the solution floor to increase monotonically.");
+ABSL_FLAG(bool, hatless_pruning, true,
+          "Prunes alternate solutions whenever a buffer has nothing overhead.");
 
 ABSL_FLAG(std::string, preordering_heuristics, "WAT,TAW,TWA",
           "Static preordering heuristics to attempt.");
@@ -71,6 +73,7 @@ int main(int argc, char* argv[]) {
       .static_preordering = absl::GetFlag(FLAGS_static_preordering),
       .dynamic_decomposition = absl::GetFlag(FLAGS_dynamic_decomposition),
       .monotonic_floor = absl::GetFlag(FLAGS_monotonic_floor),
+      .hatless_pruning = absl::GetFlag(FLAGS_hatless_pruning),
       .preordering_heuristics = absl::StrSplit(
           absl::GetFlag(FLAGS_preordering_heuristics), ',', absl::SkipEmpty()),
   };

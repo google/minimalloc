@@ -53,6 +53,7 @@ SolverParams getDisabledParams() {
     .static_preordering = false,
     .dynamic_decomposition = false,
     .monotonic_floor = false,
+    .hatless_pruning = false,
     .preordering_heuristics = {"TWA"},
   };
 }
@@ -90,6 +91,7 @@ class SolverTest
         .static_preordering = std::get<5>(GetParam()),
         .dynamic_decomposition = std::get<6>(GetParam()),
         .monotonic_floor = std::get<7>(GetParam()),
+        .hatless_pruning = false,
     };
   }
 };
