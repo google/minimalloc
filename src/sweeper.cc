@@ -17,6 +17,7 @@ limitations under the License.
 #include "sweeper.h"
 
 #include <algorithm>
+#include <deque>
 #include <optional>
 #include <vector>
 
@@ -79,78 +80,61 @@ bool SweepResult::operator==(const SweepResult& x) const {
 // Point 'A' may not need to be created if it's co-occurrent with point 'B',
 // points 'C' and 'D' may not need to be created unless there's a window, etc.
 std::vector<SweepPoint> CreatePoints(const Problem& problem) {
-  std::vector<SweepPoint> points;
-  points.reserve(problem.buffers.size() * 2);  // Reserve 2 spots per buffer.
+  std::vector<SweepPoint> all_points;
+  all_points.reserve(problem.buffers.size() * 2);  // Reserve 2 spots per buffer
   for (auto buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
     const Buffer& buffer = problem.buffers[buffer_idx];
-    Window window = {0, buffer.size};
-    std::optional<SweepPoint> point = {{.buffer_idx = buffer_idx,  // Point 'A'
-                                        .time_value = buffer.lifespan.lower(),
-                                        .point_type = kLeft,
-                                        .window = window,
-                                        .endpoint = true}};
+    const Lifespan& lifespan = buffer.lifespan;
+    const Window window = {0, buffer.size};
+    std::deque<SweepPoint> points;
+    absl::flat_hash_set<TimeValue> leftTimes, rightTimes;
+    // Insert left & right endpoints for all *windowed* gaps.
     for (const Gap& gap : buffer.gaps) {
-      if (gap.window) {  // This gap has a window
-        bool endpoint = false;
-        if (point) {
-          if (gap.lifespan.lower() > point->time_value) {
-            points.push_back(*point);
-            points.push_back({.buffer_idx = buffer_idx,  // Point 'B'
-                              .time_value = gap.lifespan.lower(),
-                              .point_type = kRight,
-                              .window = window,
-                              .endpoint = false});
-          } else {
-            endpoint = true;  // Special case: we're at the very beginning
-          }
-          point.reset();
-        }
-        points.push_back({.buffer_idx = buffer_idx,  // Point 'C'
-                          .time_value = gap.lifespan.lower(),
-                          .point_type = kLeft,
-                          .window = *gap.window,
-                          .endpoint = endpoint});
-        if (gap.lifespan.upper() == buffer.lifespan.upper()) {
-          window = *gap.window;  // Special case: we've reached the very end
-          continue;
-        }
-        points.push_back({.buffer_idx = buffer_idx,  // Point 'D'
-                          .time_value = gap.lifespan.upper(),
-                          .point_type = kRight,
-                          .window = *gap.window,
-                          .endpoint = false});
-        points.push_back({.buffer_idx = buffer_idx,  // Point 'E'
-                          .time_value = gap.lifespan.upper(),
-                          .point_type = kLeft,
-                          .window = window,
-                          .endpoint = false});
-      } else {  // This gap does not have a window
-        points.push_back(*point);
-        point.reset();
-        points.push_back({.buffer_idx = buffer_idx,
-                          .time_value = gap.lifespan.lower(),
-                          .point_type = kRight,
-                          .window = window,
-                          .endpoint = false});
-        points.push_back({.buffer_idx = buffer_idx,
-                          .time_value = gap.lifespan.upper(),
-                          .point_type = kLeft,
-                          .window = window,
-                          .endpoint = false});
+      if (!gap.window) continue;
+      points.push_back({buffer_idx, gap.lifespan.lower(), kLeft, *gap.window});
+      points.push_back({buffer_idx, gap.lifespan.upper(), kRight, *gap.window});
+      leftTimes.insert(gap.lifespan.lower());
+      rightTimes.insert(gap.lifespan.upper());
+    }
+    // If needed, insert new points for the buffer's start & end times.
+    if (points.empty() || points.front().time_value != lifespan.lower()) {
+      points.push_front({buffer_idx, lifespan.lower(), kLeft, window});
+    }
+    if (points.empty() || points.back().time_value != lifespan.upper()) {
+      points.push_back({buffer_idx, lifespan.upper(), kRight, window});
+    }
+    // Mark the endpoints.
+    points.front().endpoint = points.back().endpoint = true;
+    rightTimes.insert(lifespan.lower());
+    leftTimes.insert(lifespan.upper());
+    // Insert left & right endpoints for all *non-windowed* gaps.
+    for (const Gap& gap : buffer.gaps) {
+      if (gap.window) continue;
+      if (!rightTimes.contains(gap.lifespan.lower())) {
+        points.push_back({buffer_idx, gap.lifespan.lower(), kRight, window});
+        rightTimes.insert(gap.lifespan.lower());
+      }
+      if (!leftTimes.contains(gap.lifespan.upper())) {
+        points.push_back({buffer_idx, gap.lifespan.upper(), kLeft, window});
+        leftTimes.insert(gap.lifespan.upper());
+      }
+      leftTimes.insert(gap.lifespan.lower());
+      rightTimes.insert(gap.lifespan.upper());
+    }
+    // Insert left & right endpoints for any implicitly active buffer sections.
+    for (const Gap& gap : buffer.gaps) {
+      if (!rightTimes.contains(gap.lifespan.lower())) {
+        points.push_back({buffer_idx, gap.lifespan.lower(), kRight, window});
+      }
+      if (!leftTimes.contains(gap.lifespan.upper())) {
+        points.push_back({buffer_idx, gap.lifespan.upper(), kLeft, window});
       }
     }
-    if (point) {
-      points.push_back(*point);
-      point.reset();
-    }
-    points.push_back({.buffer_idx = buffer_idx,  // Point 'F'
-                      .time_value = buffer.lifespan.upper(),
-                      .point_type = kRight,
-                      .window = window,
-                      .endpoint = true});
+    // Add these into the list of all points.
+    all_points.insert(all_points.end(), points.begin(), points.end());
   }
-  std::sort(points.begin(), points.end());
-  return points;
+  std::sort(all_points.begin(), all_points.end());
+  return all_points;
 }
 
 SweepResult Sweep(const Problem& problem) {

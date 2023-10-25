@@ -593,5 +593,82 @@ TEST(CalculateCutsTest, Tetris) {
   EXPECT_EQ(sweep_result.CalculateCuts(), std::vector<CutCount>({2}));
 }
 
+////////////////// MixedGaps ///////////////////
+//                                            //
+//            t=4    t=5    t=6    t=7    t=8 //
+//             |======|======|======|======|  //
+//             |                           |  //
+//             |      |------|      |------|  //
+//    offset=1 |      |      |      |      |  //
+//             |------|  b0  |      |  b0  |  //
+//    offset=0 |             |      |      |  //
+//             |======|======|======|======|  //
+//                                            //
+//             |======|======|======|======|  //
+// partitions: |             p0            |  //
+//             |------|------|------|------|  //
+//   sections: | sec0 | sec1 |      | sec2 |  //
+//             |======|======|======|======|  //
+//                                            //
+////////////////////////////////////////////////
+
+TEST(CreatePointsTest, MixedGaps) {
+  const Problem problem = {
+    .buffers = {{.lifespan = {4, 8},
+                 .size = 2,
+                 .gaps = {{.lifespan = {4, 5}, .window = {{0, 1}}},
+                          {.lifespan = {5, 6}, .window = {{0, 2}}},
+                          {.lifespan = {6, 7}},
+                          {.lifespan = {7, 8}, .window = {{0, 2}}}}}},
+    .capacity = 3
+  };
+  EXPECT_EQ(
+      CreatePoints(problem),
+      (std::vector<SweepPoint>{
+          {/*buffer_idx*/ 0, /*time_value*/ 4, kLeft, {0, 1}, true},
+          {/*buffer_idx*/ 0, /*time_value*/ 5, kRight, {0, 1}, false},
+          {/*buffer_idx*/ 0, /*time_value*/ 5, kLeft, {0, 2}, false},
+          {/*buffer_idx*/ 0, /*time_value*/ 6, kRight, {0, 2}, false},
+          {/*buffer_idx*/ 0, /*time_value*/ 7, kLeft, {0, 2}, false},
+          {/*buffer_idx*/ 0, /*time_value*/ 8, kRight, {0, 2}, true},
+      }));
+}
+
+TEST(SweeperTest, MixedGaps) {
+  const Problem problem = {
+    .buffers = {{.lifespan = {4, 8},
+                 .size = 2,
+                 .gaps = {{.lifespan = {4, 5}, .window = {{0, 1}}},
+                          {.lifespan = {5, 6}, .window = {{0, 2}}},
+                          {.lifespan = {6, 7}},
+                          {.lifespan = {7, 8}, .window = {{0, 2}}}}}},
+    .capacity = 3
+  };
+  EXPECT_EQ(
+      Sweep(problem),
+      (SweepResult{
+          .sections = {{0}, {0}, {0}},
+          .partitions = {{.buffer_idxs = {0}, .section_range = {0, 3}}},
+          .buffer_data = {
+              {.section_spans = {{.section_range = {0, 1}, .window = {0, 1}},
+                                 {.section_range = {1, 2}, .window = {0, 2}},
+                                 {.section_range = {2, 3}, .window = {0, 2}}}},
+          },
+      }));
+}
+
+TEST(CalculateCutsTest, MixedGaps) {
+  const SweepResult sweep_result = {
+      .sections = {{0}, {0}, {0}},
+      .partitions = {{.buffer_idxs = {0}, .section_range = {0, 3}}},
+      .buffer_data = {
+          {.section_spans = {{.section_range = {0, 1}, .window = {0, 1}},
+                             {.section_range = {1, 2}, .window = {0, 2}},
+                             {.section_range = {2, 3}, .window = {0, 2}}}},
+      },
+  };
+  EXPECT_EQ(sweep_result.CalculateCuts(), std::vector<CutCount>({1, 1}));
+}
+
 }  // namespace
 }  // namespace minimalloc

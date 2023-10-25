@@ -166,7 +166,7 @@ struct SweepPoint {
   TimeValue time_value;
   SweepPointType point_type;
   Window window;
-  bool endpoint;
+  bool endpoint = false;
   bool operator==(const SweepPoint& x) const;
   bool operator<(const SweepPoint& x) const;
 };
