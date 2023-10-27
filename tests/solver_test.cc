@@ -137,6 +137,11 @@ TEST_P(SolverTest, InfeasibleTricky) {
   test_infeasible(problem);
 }
 
+TEST_P(SolverTest, EmptyProblem) {
+  const Problem problem;
+  test_feasible(problem);
+}
+
 TEST_P(SolverTest, SingleBuffer) {
   const Problem problem = {
     .buffers = {{.lifespan = {0, 2}, .size = 2}},

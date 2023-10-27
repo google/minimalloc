@@ -81,6 +81,7 @@ class SolverImpl {
       backtracks_(*backtracks), cancelled_(cancelled) {}
 
   absl::StatusOr<Solution> Solve() {
+    if (problem_.buffers.empty()) return solution_;
     const auto num_buffers = problem_.buffers.size();
     assignment_.offsets.resize(num_buffers, kNoOffset);
     solution_.offsets.resize(num_buffers, kNoOffset);
