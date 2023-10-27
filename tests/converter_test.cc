@@ -139,6 +139,25 @@ TEST(ConverterTest, ToCsvStringIDs) {
       "Little,5,10,15,1,\nBig,6,12,18,2,7-8 9-10\n");
 }
 
+TEST(ConverterTest, ToCsvOldFormat) {
+  EXPECT_EQ(
+      ToCsv({
+          .buffers = {
+              {.id = "Little", .lifespan = {5, 10}, .size = 15},
+              {
+                .id = "Big",
+                .lifespan = {6, 12},
+                .size = 18,
+                .alignment = 2,
+                .gaps = {{.lifespan = {7, 8}}, {.lifespan = {9, 10}}}
+              },
+           },
+          .capacity = 40
+        }, nullptr, true),
+      "id,start,end,size,alignment,gaps\n"
+      "Little,5,9,15,1,\nBig,6,11,18,2,7-7 9-9\n");
+}
+
 TEST(ConverterTest, FromCsvProblemOnly) {
   EXPECT_EQ(
       *FromCsv("lower,size,id,upper\n6,18,1,12\n5,15,0,10\n"),

@@ -34,7 +34,9 @@ namespace minimalloc {
 //      2,10,40,3,2
 //
 // If a solution is provided, an additional "offset" column will be created.
-std::string ToCsv(const Problem& problem, Solution* solution = nullptr);
+std::string ToCsv(const Problem& problem,
+                  Solution* solution = nullptr,
+                  bool old_format = false);
 
 // Given a CSV like the one below (with buffers listed in any order), converts
 // it into a Problem instance or returns a status if the problem is malformed:

@@ -66,22 +66,17 @@ bool IncludeGaps(const Problem& problem) {
 
 }  // namespace
 
-std::string ToCsv(const Problem& problem, Solution* solution) {
+std::string ToCsv(const Problem& problem, Solution* solution, bool old_format) {
   const bool include_alignment = IncludeAlignment(problem);
   const bool include_gaps = IncludeGaps(problem);
+  const int addend = old_format ? -1 : 0;
   std::vector<std::string> header = {std::string(kId),
-                                     std::string(kLower),
-                                     std::string(kUpper),
+                                     std::string(old_format ? kStart : kLower),
+                                     std::string(old_format ? kEnd : kUpper),
                                      std::string(kSize)};
-  if (include_alignment) {
-    header.push_back(std::string(kAlignment));
-  }
-  if (include_gaps) {
-    header.push_back(std::string(kGaps));
-  }
-  if (solution) {
-    header.push_back(std::string(kOffset));
-  }
+  if (include_alignment) header.push_back(std::string(kAlignment));
+  if (include_gaps) header.push_back(std::string(kGaps));
+  if (solution) header.push_back(std::string(kOffset));
   std::vector<std::vector<std::string>> input = { header };
   for (auto buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
     const Buffer& buffer = problem.buffers[buffer_idx];
@@ -89,8 +84,8 @@ std::string ToCsv(const Problem& problem, Solution* solution) {
     std::vector<std::string> gaps;
     gaps.reserve(buffer.gaps.size());
     for (const Gap& gap : buffer.gaps) {
-      std::string gap_str =
-          absl::StrCat(gap.lifespan.lower(), "-", gap.lifespan.upper());
+      std::string gap_str = absl::StrCat(gap.lifespan.lower(), "-",
+                                         gap.lifespan.upper() + addend);
       if (gap.window) {
         gap_str +=
             absl::StrCat("@", gap.window->lower(), ":", gap.window->upper());
@@ -99,17 +94,11 @@ std::string ToCsv(const Problem& problem, Solution* solution) {
     }
     std::vector<std::string> record = {absl::StrCat(buffer.id),
                                        absl::StrCat(lifespan.lower()),
-                                       absl::StrCat(lifespan.upper()),
+                                       absl::StrCat(lifespan.upper() + addend),
                                        absl::StrCat(buffer.size)};
-    if (include_alignment) {
-      record.push_back(absl::StrCat(buffer.alignment));
-    }
-    if (include_gaps) {
-      record.push_back(absl::StrJoin(gaps, " "));
-    }
-    if (solution) {
-      record.push_back(std::to_string(solution->offsets[buffer_idx]));
-    }
+    if (include_alignment) record.push_back(absl::StrCat(buffer.alignment));
+    if (include_gaps) record.push_back(absl::StrJoin(gaps, " "));
+    if (solution) record.push_back(absl::StrCat(solution->offsets[buffer_idx]));
     input.push_back(record);
   }
   std::ostringstream oss;
