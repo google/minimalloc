@@ -28,6 +28,44 @@ TEST(ConverterTest, ToCsv) {
   EXPECT_EQ(
       ToCsv({
           .buffers = {
+              {.id = "0", .lifespan = {5, 10}, .size = 15, .hint = 0},
+              {
+                .id = "1",
+                .lifespan = {6, 12},
+                .size = 18,
+                .alignment = 2,
+                .gaps = {{.lifespan = {7, 8}},
+                         {.lifespan = {9, 10}, .window = {{1, 17}}}}
+              },
+           },
+          .capacity = 40
+        }),
+      "id,lower,upper,size,alignment,hint,gaps\n"
+      "0,5,10,15,1,0,\n1,6,12,18,2,-1,7-8 9-10@1:17\n");
+}
+
+TEST(ConverterTest, ToCsvWithoutAlignment) {
+  EXPECT_EQ(
+      ToCsv({
+          .buffers = {
+              {.id = "0", .lifespan = {5, 10}, .size = 15, .hint = 0},
+              {
+                .id = "1",
+                .lifespan = {6, 12},
+                .size = 18,
+                .gaps = {{.lifespan = {7, 8}}, {.lifespan = {9, 10}}}
+              },
+           },
+          .capacity = 40
+        }),
+      "id,lower,upper,size,hint,gaps\n"
+      "0,5,10,15,0,\n1,6,12,18,-1,7-8 9-10\n");
+}
+
+TEST(ConverterTest, ToCsvWithoutHint) {
+  EXPECT_EQ(
+      ToCsv({
+          .buffers = {
               {.id = "0", .lifespan = {5, 10}, .size = 15},
               {
                 .id = "1",
@@ -44,29 +82,11 @@ TEST(ConverterTest, ToCsv) {
       "0,5,10,15,1,\n1,6,12,18,2,7-8 9-10@1:17\n");
 }
 
-TEST(ConverterTest, ToCsvWithoutAlignment) {
-  EXPECT_EQ(
-      ToCsv({
-          .buffers = {
-              {.id = "0", .lifespan = {5, 10}, .size = 15},
-              {
-                .id = "1",
-                .lifespan = {6, 12},
-                .size = 18,
-                .gaps = {{.lifespan = {7, 8}}, {.lifespan = {9, 10}}}
-              },
-           },
-          .capacity = 40
-        }),
-      "id,lower,upper,size,gaps\n"
-      "0,5,10,15,\n1,6,12,18,7-8 9-10\n");
-}
-
 TEST(ConverterTest, ToCsvWithoutGaps) {
   EXPECT_EQ(
       ToCsv({
           .buffers = {
-              {.id = "0", .lifespan = {5, 10}, .size = 15},
+              {.id = "0", .lifespan = {5, 10}, .size = 15, .hint = 0},
               {
                 .id = "1",
                 .lifespan = {6, 12},
@@ -76,8 +96,8 @@ TEST(ConverterTest, ToCsvWithoutGaps) {
            },
           .capacity = 40
         }),
-      "id,lower,upper,size,alignment\n"
-      "0,5,10,15,1\n1,6,12,18,2\n");
+      "id,lower,upper,size,alignment,hint\n"
+      "0,5,10,15,1,0\n1,6,12,18,2,-1\n");
 }
 
 TEST(ConverterTest, ToCsvWithSolution) {
@@ -175,6 +195,24 @@ TEST(ConverterTest, FromCsvWithAlignment) {
       (Problem{
         .buffers = {
           {.id = "1", .lifespan = {6, 12}, .size = 18, .alignment = 2},
+          {.id = "0", .lifespan = {5, 10}, .size = 15, .alignment = 1},
+        },
+      }));
+}
+
+TEST(ConverterTest, FromCsvWithHints) {
+  EXPECT_THAT(
+      *FromCsv("begin,size,buffer,upper,alignment,hint\n"
+               "6,18,1,12,2,0\n5,15,0,10,1,-1\n"),
+      (Problem{
+        .buffers = {
+          {
+            .id = "1",
+            .lifespan = {6, 12},
+            .size = 18,
+            .alignment = 2,
+            .hint = 0
+          },
           {.id = "0", .lifespan = {5, 10}, .size = 15, .alignment = 1},
         },
       }));

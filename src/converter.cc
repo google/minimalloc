@@ -43,6 +43,7 @@ constexpr absl::string_view kBuffer = "buffer";
 constexpr absl::string_view kBufferId = "buffer_id";
 constexpr absl::string_view kEnd = "end";
 constexpr absl::string_view kGaps = "gaps";
+constexpr absl::string_view kHint = "hint";
 constexpr absl::string_view kId = "id";
 constexpr absl::string_view kLower = "lower";
 constexpr absl::string_view kOffset = "offset";
@@ -53,6 +54,13 @@ constexpr absl::string_view kUpper = "upper";
 bool IncludeAlignment(const Problem& problem) {
   for (const Buffer& buffer : problem.buffers) {
     if (buffer.alignment != 1) return true;
+  }
+  return false;
+}
+
+bool IncludeHint(const Problem& problem) {
+  for (const Buffer& buffer : problem.buffers) {
+    if (buffer.hint) return true;
   }
   return false;
 }
@@ -68,6 +76,7 @@ bool IncludeGaps(const Problem& problem) {
 
 std::string ToCsv(const Problem& problem, Solution* solution, bool old_format) {
   const bool include_alignment = IncludeAlignment(problem);
+  const bool include_hint = IncludeHint(problem);
   const bool include_gaps = IncludeGaps(problem);
   const int addend = old_format ? -1 : 0;
   std::vector<std::string> header = {std::string(kId),
@@ -75,6 +84,7 @@ std::string ToCsv(const Problem& problem, Solution* solution, bool old_format) {
                                      std::string(old_format ? kEnd : kUpper),
                                      std::string(kSize)};
   if (include_alignment) header.push_back(std::string(kAlignment));
+  if (include_hint) header.push_back(std::string(kHint));
   if (include_gaps) header.push_back(std::string(kGaps));
   if (solution) header.push_back(std::string(kOffset));
   std::vector<std::vector<std::string>> input = { header };
@@ -97,6 +107,7 @@ std::string ToCsv(const Problem& problem, Solution* solution, bool old_format) {
                                        absl::StrCat(lifespan.upper() + addend),
                                        absl::StrCat(buffer.size)};
     if (include_alignment) record.push_back(absl::StrCat(buffer.alignment));
+    if (include_hint) record.push_back(absl::StrCat(buffer.hint.value_or(-1)));
     if (include_gaps) record.push_back(absl::StrJoin(gaps, " "));
     if (solution) record.push_back(absl::StrCat(solution->offsets[buffer_idx]));
     input.push_back(record);
@@ -157,6 +168,14 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input) {
                          fields[col_map[kAlignment]]));
       }
     }
+    std::optional<Offset> hint;
+    if (col_map.contains(kHint)) {
+      int hint_val = -1;
+      if (!absl::SimpleAtoi(fields[col_map[kHint]], &hint_val)) {
+        return absl::InvalidArgumentError("Improperly formed hint");
+      }
+      if (hint_val >= 0) hint = hint_val;
+    }
     std::vector<Gap> gaps;
     if (col_map.contains(kGaps)) {
       absl::string_view gaps_str = fields[col_map[kGaps]];
@@ -211,7 +230,8 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input) {
                                .size = size,
                                .alignment = alignment,
                                .gaps = gaps,
-                               .offset = offset});
+                               .offset = offset,
+                               .hint = hint});
   }
   return problem;
 }

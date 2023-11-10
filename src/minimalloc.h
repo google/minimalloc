@@ -66,6 +66,7 @@ struct Buffer {
   int64_t alignment = 1;  // The lowest common denominator of assigned offsets.
   std::vector<Gap> gaps;  // Slots where this buffer is inactive.
   std::optional<Offset> offset;  // If present, the fixed pos. of this buffer.
+  std::optional<Offset> hint;    // If present, provides a hint to the solver.
 
   // The product of this buffer's size and lifespan length.
   Area area() const;

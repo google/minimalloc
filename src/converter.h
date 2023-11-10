@@ -17,7 +17,6 @@ limitations under the License.
 #ifndef MINIMALLOC_SRC_CONVERTER_H_
 #define MINIMALLOC_SRC_CONVERTER_H_
 
-#include <cstdint>
 #include <string>
 
 #include "minimalloc.h"
@@ -46,8 +45,8 @@ std::string ToCsv(const Problem& problem,
 //      0,10,20,1,1
 //      2,10,40,3,2
 //
-// If an offset column is provided, these values will be stored into each
-// buffer's offset member field.
+// If an offset or hint column is provided, these values will be stored into
+// each buffer's offset or hint member field (respectively).
 absl::StatusOr<Problem> FromCsv(absl::string_view input);
 
 }  // namespace minimalloc
