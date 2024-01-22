@@ -60,6 +60,55 @@ ABSL_FLAG(bool, hatless_pruning, true,
 ABSL_FLAG(std::string, preordering_heuristics, "WAT,TAW,TWA",
           "Static preordering heuristics to attempt.");
 
+ABSL_FLAG(bool, print_solution, false, "Prints the solution in LaTeX");
+
+// Found using trial-and-error with the LaTeX 'tikzpicture' package.
+const float kWidth = 17;
+const float kHeight = 8.5;
+
+void PrintSolution(const minimalloc::Problem& problem,
+                   const minimalloc::Solution& solution) {
+  std::ostream& os = std::cout;
+  os << std::endl;
+  os << "\\documentclass[tikz]{standalone}" << std::endl;
+  os << "\\usepackage{tikz}" << std::endl;
+  os << "\\usepackage{pgfplots}" << std::endl;
+  os << "\\begin{document}" << std::endl;
+  os << "\\begin{tikzpicture}" << std::endl;
+  minimalloc::TimeValue min_time = INT_MAX;
+  minimalloc::TimeValue max_time = 0;
+  for (const minimalloc::Buffer& buffer : problem.buffers) {
+    min_time = std::min(min_time, buffer.lifespan.lower());
+    max_time = std::max(max_time, buffer.lifespan.upper());
+  }
+  const float scale_x = kWidth / (max_time - min_time);
+  const float scale_y = kHeight / problem.capacity;
+  for (int buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
+    const minimalloc::Buffer& buffer = problem.buffers[buffer_idx];
+    for (int i = 0; i <= buffer.gaps.size(); ++i) {
+      auto left = (i == 0) ? buffer.lifespan.lower()
+                           : buffer.gaps[i - 1].lifespan.upper();
+      auto right = (i == buffer.gaps.size()) ? buffer.lifespan.upper()
+                                             : buffer.gaps[i].lifespan.lower();
+      if (left == right) continue;
+      const float x = scale_x * (left - min_time);
+      const float y = scale_y * solution.offsets[buffer_idx];
+      const float w = scale_x * (right - left);
+      const float h = scale_y * buffer.size;
+      const std::string color = "lightgray";
+      os << "\\fill[" << color << ",draw=darkgray] (" << x << "," << y
+         << ")" << " rectangle (" << x + w << "," << y + h << ");  % height = "
+         << h << ", ID = " << buffer.id << std::endl;
+    }
+  }
+  const float w = scale_x * (max_time - min_time);
+  const float h = scale_y * problem.capacity;
+  os << "\\fill[draw=black,fill opacity=0,thick] (0,0) rectangle "
+     << "(" << w << "," << h << ");" << std::endl;
+  os << "\\end{tikzpicture}" << std::endl;
+  os << "\\end{document}" << std::endl;
+}
+
 // Solves a given problem using the Solver.
 int main(int argc, char* argv[]) {
   absl::ParseCommandLine(argc, argv);
@@ -96,6 +145,7 @@ int main(int argc, char* argv[]) {
     std::cerr << (validation_result == minimalloc::ValidationResult::kGood
         ? "PASS" : "FAIL") << std::endl;
   }
+  if (absl::GetFlag(FLAGS_print_solution)) PrintSolution(*problem, *solution);
   std::string contents = minimalloc::ToCsv(*problem, &(*solution));
   std::ofstream ofs(absl::GetFlag(FLAGS_output));
   ofs << contents;
