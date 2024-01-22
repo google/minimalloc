@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 #include <algorithm>
+#include <climits>
 #include <cstdint>
 #include <fstream>
 #include <iomanip>
