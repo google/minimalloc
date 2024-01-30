@@ -3,4 +3,4 @@
 	url = https://github.com/abseil/abseil-cpp.git
 [submodule "external/googletest"]
 	path = external/googletest
-	url = git@github.com:google/googletest.git
+	url = https://github.com/google/googletest.git
