@@ -1,8 +1,8 @@
 <p align="center">
-<img src="img/minimalloc.png">
+<img src="img/minimalloc-with-badges.png">
 </p>
 
-Source code for our upcoming [ASPLOS 2023 (Vol. 4)](https://www.asplos-conference.org/asplos2023/) paper, "***MiniMalloc: A Lightweight Memory Allocator for Hardware-Accelerated Machine Learning***."
+Source code for our [ASPLOS 2023](https://www.asplos-conference.org/asplos2023/) paper, "***[MiniMalloc: A Lightweight Memory Allocator for Hardware-Accelerated Machine Learning](https://doi.org/10.1145/3623278.3624752)***."
 
 ## Overview
 
