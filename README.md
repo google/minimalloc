@@ -62,6 +62,7 @@ b5,0,21,4,0
   title = {{MiniMalloc}: A Lightweight Memory Allocator for Hardware-Accelerated Machine Learning},
   booktitle = {Proceedings of the 28th International Conference on Architectural Support for Programming Languages and Operating Systems},
   volume = {4},
+  pages = {238--252},
   author = {Moffitt, Michael D.},
   year = {2023},
   series = {ASPLOS 2023},
