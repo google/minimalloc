@@ -100,6 +100,10 @@ void PrintSolution(const minimalloc::Problem& problem,
       os << "\\fill[" << color << ",draw=darkgray] (" << x << "," << y
          << ")" << " rectangle (" << x + w << "," << y + h << ");  % height = "
          << h << ", ID = " << buffer.id << std::endl;
+
+      // If you don't want to see the buffer.id, comment this line
+      os << "\\node at (" << x + w / 2 << "," << y + h / 2 << ")" << " {" << buffer.id << "};" << std::endl;
+
     }
   }
   const float w = scale_x * (max_time - min_time);
