@@ -175,6 +175,36 @@ TEST_P(SolverTest, FiveBuffers) {
   test_feasible(problem);
 }
 
+TEST_P(SolverTest, FixedBufferFeasible) {
+  const Problem problem = {
+    .buffers = {
+        {.lifespan = {1, 2}, .size = 1},
+        {.lifespan = {0, 2}, .size = 1},
+        {.lifespan = {2, 3}, .size = 2, .offset = 1},
+        {.lifespan = {1, 3}, .size = 1},
+        {.lifespan = {0, 1}, .size = 2},
+    },
+    .capacity = 3
+  };
+  Solver solver(getParams());
+  const auto solution = solver.Solve(problem);
+  EXPECT_EQ(solution->offsets[2], 1);
+}
+
+TEST_P(SolverTest, FixedBufferInfeasible) {
+  const Problem problem = {
+    .buffers = {
+        {.lifespan = {1, 2}, .size = 1, .offset = 0},
+        {.lifespan = {0, 2}, .size = 1},
+        {.lifespan = {2, 3}, .size = 2},
+        {.lifespan = {1, 3}, .size = 1},
+        {.lifespan = {0, 1}, .size = 2},
+    },
+    .capacity = 3
+  };
+  test_infeasible(problem);
+}
+
 TEST_P(SolverTest, TwoPartitions) {
   const Problem problem = {
     .buffers = {

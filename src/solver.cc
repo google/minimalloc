@@ -97,6 +97,9 @@ class SolverImpl {
           section_data_[s_idx].total += window.upper() - window.lower();
         }
       }
+      if (const Buffer& buffer = problem_.buffers[buffer_idx]; buffer.offset) {
+        min_offsets_[buffer_idx] = *buffer.offset;
+      }
     }
     cuts_ = sweep_result_.CalculateCuts();
     // If multiple heuristics were specified, use round robin to try them all.
@@ -362,6 +365,9 @@ class SolverImpl {
       if (params_.check_dominance) {
        // Check if this solution would introduce an unnecessary gap.
         if (offset >= min_height) continue;
+      }
+      if (const Buffer& buffer = problem_.buffers[buffer_idx]; buffer.offset) {
+        if (offset > *buffer.offset) continue;
       }
       assignment_.offsets[buffer_idx] = offset;
       absl::flat_hash_set<SectionIdx> affected_sections;
