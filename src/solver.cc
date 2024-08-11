@@ -244,7 +244,8 @@ class SolverImpl {
   // Updates min offset data, given that 'buffer_idx' is the next to be placed.
   std::optional<std::vector<OffsetChange>> UpdateMinOffsets(
       BufferIdx buffer_idx,
-      absl::flat_hash_set<SectionIdx>& affected_sections) {
+      absl::flat_hash_set<SectionIdx>& affected_sections,
+      bool& fixed_offset_failure) {
     bool hatless = true;
     std::vector<OffsetChange> offset_changes;
     const Offset offset = assignment_.offsets[buffer_idx];
@@ -262,6 +263,10 @@ class SolverImpl {
       const Buffer& other_buffer = problem_.buffers[other_idx];
       Offset diff = min_offsets_[other_idx] % other_buffer.alignment;
       if (diff > 0) min_offsets_[other_idx] += other_buffer.alignment - diff;
+      if (other_buffer.offset &&
+          min_offsets_[other_idx] > *other_buffer.offset) {
+        fixed_offset_failure = true;
+      }
       if (!params_.unallocated_floor) continue;  // Mutation safe.
       const BufferData& buffer_data = sweep_result_.buffer_data[other_idx];
       for (const SectionSpan& section_span : buffer_data.section_spans) {
@@ -371,11 +376,13 @@ class SolverImpl {
       }
       assignment_.offsets[buffer_idx] = offset;
       absl::flat_hash_set<SectionIdx> affected_sections;
-      auto offset_changes = UpdateMinOffsets(buffer_idx, affected_sections);
+      bool fixed_offset_failure = false;
+      auto offset_changes = UpdateMinOffsets(buffer_idx, affected_sections,
+		                             fixed_offset_failure);
       std::vector<SectionChange> section_changes =
           UpdateSectionData(affected_sections, buffer_idx);
       absl::StatusCode status_code = absl::StatusCode::kNotFound;
-      if (Check(partition, offset)) {
+      if (!fixed_offset_failure && Check(partition, offset)) {
         status_code =
             params_.dynamic_decomposition
                 ? DynamicallyDecompose(partition, preordering_comparator,
