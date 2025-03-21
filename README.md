@@ -4,6 +4,10 @@
 
 Source code for our [ASPLOS 2023](https://www.asplos-conference.org/asplos2023/) paper, "***[MiniMalloc: A Lightweight Memory Allocator for Hardware-Accelerated Machine Learning](https://doi.org/10.1145/3623278.3624752)***."
 
+## News
+
+ * MiniMalloc to be featured in the [MIT PL Review 2025](https://plr.csail.mit.edu/) on April 25th, 2025.
+
 ## Overview
 
 An increasing number of deep learning workloads are being supported by *hardware acceleration*.  In order to unlock the maximum performance of a hardware accelerator, a machine learning model must first be carefully mapped onto its various internal components by way of a *compiler*.  One especially important problem faced by a production-class compiler is that of *memory allocation*, whereby a set of buffers with predefined lifespans are mapped onto offsets in global memory.  Since this allocation is performed statically, the compiler has the freedom to place buffers strategically, but must nevertheless wrestle with a combinatorial explosion in the number of assignment possibilities.
