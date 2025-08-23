@@ -103,6 +103,7 @@ struct Partition {
   SectionRange section_range;
 
   bool operator==(const Partition& x) const;
+  friend std::ostream& operator<<(std::ostream& os, const Partition& p);
 };
 
 // Details regarding a buffer that overlaps with another.

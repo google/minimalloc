@@ -49,6 +49,12 @@ bool Partition::operator==(const Partition& x) const {
          section_range == x.section_range;
 }
 
+std::ostream& operator<<(std::ostream& os, const Partition& p) {
+  os << "Section Range: " << p.section_range
+      << ", # Buffers: " << p.buffer_idxs.size();
+  return os;
+}
+
 bool Overlap::operator==(const Overlap& x) const {
   return buffer_idx == x.buffer_idx && effective_size == x.effective_size;
 }

@@ -43,6 +43,11 @@ struct Interval {
     if (lower_ != other.lower_) return lower_ < other.lower_;
     return upper_ < other.upper_;
   }
+
+  friend std::ostream& operator<<(std::ostream& os, const Interval<T>& interval) {
+    os << "[" << interval.lower() << ", " << interval.upper() << ")";
+    return os;
+  }
 };
 
 using BufferIdx = int64_t;  // An index into a Problem's list of buffers.

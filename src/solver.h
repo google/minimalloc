@@ -99,6 +99,7 @@ class PreorderingComparator {
  public:
   explicit PreorderingComparator(const PreorderingHeuristic& h);
   bool operator()(const PreorderData& a, const PreorderData& b) const;
+  friend std::ostream& operator<<(std::ostream& os, const PreorderingComparator& c);
 
  private:
   PreorderingHeuristic preordering_heuristic_;

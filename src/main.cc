@@ -27,6 +27,7 @@ limitations under the License.
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -131,24 +132,39 @@ int main(int argc, char* argv[]) {
       .preordering_heuristics = absl::StrSplit(
           absl::GetFlag(FLAGS_preordering_heuristics), ',', absl::SkipEmpty()),
   };
-  std::ifstream ifs(absl::GetFlag(FLAGS_input));
+  const std::string input = absl::GetFlag(FLAGS_input);
+  std::ifstream ifs(input);
+  if (!ifs) {
+    LOG(ERROR) << "Opening file " << input << " failed.";
+    return 1;
+  }
   std::string csv((std::istreambuf_iterator<char>(ifs)),
                   (std::istreambuf_iterator<char>()   ));
   absl::StatusOr<minimalloc::Problem> problem = minimalloc::FromCsv(csv);
-  if (!problem.ok()) return 1;
+  if (!problem.ok()) {
+    LOG(ERROR) << problem.status();
+    return 1;
+  }
   problem->capacity = absl::GetFlag(FLAGS_capacity);
   minimalloc::Solver solver(params);
   const absl::Time start_time = absl::Now();
   absl::StatusOr<minimalloc::Solution> solution = solver.Solve(*problem);
   const absl::Time end_time = absl::Now();
-  std::cerr << std::fixed << std::setprecision(3)
+  LOG(INFO) << "Elasped time: " << std::fixed << std::setprecision(3)
       << absl::ToDoubleSeconds(end_time - start_time);
-  if (!solution.ok()) return 1;
+  if (!solution.ok()) {
+    LOG(ERROR) << solution.status();
+    return 1;
+  }
   if (absl::GetFlag(FLAGS_validate)) {
     minimalloc::ValidationResult validation_result =
         minimalloc::Validate(*problem, *solution);
-    std::cerr << (validation_result == minimalloc::ValidationResult::kGood
-        ? "PASS" : "FAIL") << std::endl;
+    if (validation_result == minimalloc::ValidationResult::kGood) {
+      LOG(INFO) << "Validation PASS";
+    } else {
+      LOG(ERROR) << "Validation FAIL " << validation_result;
+      return 1;
+    }
   }
   if (absl::GetFlag(FLAGS_print_solution)) PrintSolution(*problem, *solution);
   std::string contents = minimalloc::ToCsv(*problem, &(*solution));

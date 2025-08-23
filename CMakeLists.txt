@@ -14,6 +14,7 @@ add_executable(minimalloc
 )
 target_link_libraries(minimalloc
   absl::flags_parse
+  absl::log
   absl::statusor
 )
 
@@ -53,6 +54,7 @@ target_link_libraries(solver_test
   GTest::gmock_main
   GTest::gtest_main
   absl::flags
+  absl::log
   absl::statusor
 )
 add_test(NAME solver_test COMMAND solver_test)
