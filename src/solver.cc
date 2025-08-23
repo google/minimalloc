@@ -207,13 +207,16 @@ class SolverImpl {
     }
     // The floor of any section cannot be lower than its lowest minimum offset.
     for (const SectionIdx s_idx : affected_sections) {
-      Offset min_offset = INT_MAX;
+      Offset min_offset = std::numeric_limits<Offset>::max();
       for (const BufferIdx other_idx : sweep_result_.sections[s_idx]) {
         if (assignment_.offsets[other_idx] == kNoOffset) {
           min_offset = std::min(min_offset, min_offsets_[other_idx]);
         }
       }
-      if (min_offset != INT_MAX && section_data_[s_idx].floor < min_offset) {
+      if (
+        min_offset != std::numeric_limits<Offset>::max() &&
+        section_data_[s_idx].floor < min_offset
+      ) {
         section_changes.push_back(
             {.section_idx = s_idx, .floor = section_data_[s_idx].floor});
         section_data_[s_idx].floor = min_offset;
@@ -326,7 +329,7 @@ class SolverImpl {
   Offset CalcMinHeight(
       const std::vector<PreorderData>& preordering,
       const std::vector<OrderData>& ordering) {
-    Offset min_height = INT_MAX;
+    Offset min_height = std::numeric_limits<Offset>::max();
     for (const auto [offset, preorder_idx] : ordering) {
       const BufferIdx buffer_idx = preordering[preorder_idx].buffer_idx;
       const Buffer& buffer = problem_.buffers[buffer_idx];

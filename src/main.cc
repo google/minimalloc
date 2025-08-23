@@ -76,7 +76,7 @@ void PrintSolution(const minimalloc::Problem& problem,
   os << "\\usepackage{pgfplots}" << std::endl;
   os << "\\begin{document}" << std::endl;
   os << "\\begin{tikzpicture}" << std::endl;
-  minimalloc::TimeValue min_time = INT_MAX;
+  minimalloc::TimeValue min_time = std::numeric_limits<minimalloc::TimeValue>::max();
   minimalloc::TimeValue max_time = 0;
   for (const minimalloc::Buffer& buffer : problem.buffers) {
     min_time = std::min(min_time, buffer.lifespan.lower());
