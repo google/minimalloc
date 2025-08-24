@@ -28,7 +28,8 @@ enum ValidationResult {
   kBadFixed = 2,  // A buffer w/ a fixed offset is assigned somewhere else.
   kBadOffset = 3,  // The offset is out-of-bounds, ie. negative or beyond cap.
   kBadOverlap = 4,  // At least one pair of buffers overlaps in space and time.
-  kBadAlignment = 5  // At least one buffer was not properly aligned.
+  kBadAlignment = 5,  // At least one buffer was not properly aligned.
+  kBadHeight = 6  // Solution height is not buffers' maximum height
 };
 
 ValidationResult Validate(

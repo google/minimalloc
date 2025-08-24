@@ -86,6 +86,7 @@ struct Buffer {
 
 struct Solution {
   std::vector<Offset> offsets;
+  Offset height = 0;
   bool operator==(const Solution& x) const;
 };
 

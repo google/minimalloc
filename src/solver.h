@@ -37,6 +37,7 @@ using StaticPreorderingParam = bool;
 using DynamicDecompositionParam = bool;
 using MonotonicFloorParam = bool;
 using HatlessPruningParam = bool;
+using MinimizeCapacity = bool;
 using PreorderingHeuristic = std::string;
 
 // Various settings that enable / disable certain advanced search & inference
@@ -76,6 +77,9 @@ struct SolverParams {
 
   // Prunes alternate solutions whenever a buffer has nothing overhead.
   HatlessPruningParam hatless_pruning = true;
+
+  // Minimize the allocated space
+  MinimizeCapacity minimize_capacity = false;
 
   // The static preordering heuristics to attempt.
   std::vector<PreorderingHeuristic> preordering_heuristics =

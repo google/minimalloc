@@ -58,6 +58,7 @@ ABSL_FLAG(bool, monotonic_floor, true,
           "Requires the solution floor to increase monotonically.");
 ABSL_FLAG(bool, hatless_pruning, true,
           "Prunes alternate solutions whenever a buffer has nothing overhead.");
+ABSL_FLAG(bool, minimize_capacity, false, "Minimize the required memory capacity.");
 
 ABSL_FLAG(std::string, preordering_heuristics, "WAT,TAW,TWA",
           "Static preordering heuristics to attempt.");
@@ -129,6 +130,7 @@ int main(int argc, char* argv[]) {
       .dynamic_decomposition = absl::GetFlag(FLAGS_dynamic_decomposition),
       .monotonic_floor = absl::GetFlag(FLAGS_monotonic_floor),
       .hatless_pruning = absl::GetFlag(FLAGS_hatless_pruning),
+      .minimize_capacity = absl::GetFlag(FLAGS_minimize_capacity),
       .preordering_heuristics = absl::StrSplit(
           absl::GetFlag(FLAGS_preordering_heuristics), ',', absl::SkipEmpty()),
   };
@@ -150,7 +152,7 @@ int main(int argc, char* argv[]) {
   const absl::Time start_time = absl::Now();
   absl::StatusOr<minimalloc::Solution> solution = solver.Solve(*problem);
   const absl::Time end_time = absl::Now();
-  LOG(INFO) << "Elasped time: " << std::fixed << std::setprecision(3)
+  LOG(INFO) << "Elapsed time " << std::fixed << std::setprecision(3)
       << absl::ToDoubleSeconds(end_time - start_time);
   if (!solution.ok()) {
     LOG(ERROR) << solution.status();
@@ -160,7 +162,7 @@ int main(int argc, char* argv[]) {
     minimalloc::ValidationResult validation_result =
         minimalloc::Validate(*problem, *solution);
     if (validation_result == minimalloc::ValidationResult::kGood) {
-      LOG(INFO) << "Validation PASS";
+      LOG(INFO) << "Validation PASS, height " << solution->height;
     } else {
       LOG(ERROR) << "Validation FAIL " << validation_result;
       return 1;

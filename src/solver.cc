@@ -124,6 +124,7 @@ class SolverImpl {
         << ", node visited "
         << std::numeric_limits<int64_t>::max() - nodes_remaining_
         << ", status " << absl::StatusCodeToString(absl::StatusCode::kOk);
+    UpdateSolutionHeight();
     return solution_;
   }
 
@@ -163,6 +164,7 @@ class SolverImpl {
       }
       if (status.ok()) break;
     }
+    UpdateSolutionHeight();
     return solution_;
   }
 
@@ -516,6 +518,16 @@ class SolverImpl {
     return status_code;
   }
 
+  void UpdateSolutionHeight() {
+    const auto num_buffers = problem_.buffers.size();
+    for (BufferIdx buffer_idx = 0; buffer_idx < num_buffers; buffer_idx++) {
+      const Offset buffer_size = problem_.buffers[buffer_idx].size;
+      const Offset buffer_offset = solution_.offsets[buffer_idx];
+      solution_.height = std::max(
+        solution_.height, buffer_size + buffer_offset);
+    }
+  }
+
   const SolverParams& params_;
   const absl::Time start_time_;
   const Problem& problem_;
@@ -574,9 +586,41 @@ absl::StatusOr<Solution> Solver::Solve(const Problem& problem) {
 absl::StatusOr<Solution> Solver::SolveWithStartTime(const Problem& problem,
                                                     absl::Time start_time) {
   const SweepResult sweep_result = Sweep(problem);
-  SolverImpl solver_impl(
-      params_, start_time, problem, sweep_result, &backtracks_, cancelled_);
-  return solver_impl.Solve();
+  if (!params_.minimize_capacity) {
+    SolverImpl solver_impl(
+        params_, start_time, problem, sweep_result, &backtracks_, cancelled_);
+    return solver_impl.Solve();
+  }
+
+  // binary search the minimum viable capacity
+  Problem problem_bs = problem;
+  absl::StatusOr<Solution> solution(absl::Status(
+    absl::StatusCode::kNotFound, "Not found any valid capacity."));
+  Capacity lo_capacity = 0, hi_capacity = problem.capacity;
+  while (lo_capacity <= hi_capacity) {
+    Capacity mid_capacity = (lo_capacity + hi_capacity) / 2;
+    problem_bs.capacity = mid_capacity;
+    SolverImpl solver_impl(
+        params_, start_time, problem_bs, sweep_result, &backtracks_, cancelled_);
+    const absl::Time start_time = absl::Now();
+    auto solution_bs = solver_impl.Solve();
+    const absl::Time end_time = absl::Now();
+    if (!solution_bs.ok()) {
+      DLOG(INFO) << __func__ << "Binary search, capacity " << mid_capacity
+          << ", elapsed time " << std::fixed << std::setprecision(3)
+          << absl::ToDoubleSeconds(end_time - start_time)
+          << ", status " << absl::StatusCodeToString(solution_bs.status().code());
+      lo_capacity = mid_capacity + 1;
+    } else {
+      DLOG(INFO) << __func__ << "Binary search, capacity " << mid_capacity
+          << ", elapsed time " << std::fixed << std::setprecision(3)
+          << absl::ToDoubleSeconds(end_time - start_time)
+          << ", status " << absl::StatusCodeToString(absl::StatusCode::kOk);
+      solution = solution_bs;
+      hi_capacity = solution->height - 1; // mid_capacity - 1;
+    }
+  }
+  return solution;
 }
 
 int64_t Solver::get_backtracks() const { return backtracks_; }

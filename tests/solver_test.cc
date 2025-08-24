@@ -54,6 +54,7 @@ SolverParams getDisabledParams() {
     .dynamic_decomposition = false,
     .monotonic_floor = false,
     .hatless_pruning = false,
+    .minimize_capacity = false,
     .preordering_heuristics = {"TWA"},
   };
 }
@@ -64,7 +65,7 @@ class SolverTest
     : public ::testing::TestWithParam<std::tuple<
           CanonicalOnlyParam, SectionInferenceParam, DynamicOrderingParam,
           CheckDominanceParam, UnallocatedFloorParam, StaticPreorderingParam,
-          DynamicDecompositionParam, MonotonicFloorParam>> {
+          DynamicDecompositionParam, MonotonicFloorParam, MinimizeCapacity>> {
  protected:
   void test_feasible(const Problem& problem) {
     Solver solver(getParams());
@@ -91,6 +92,7 @@ class SolverTest
         .static_preordering = std::get<5>(GetParam()),
         .dynamic_decomposition = std::get<6>(GetParam()),
         .monotonic_floor = std::get<7>(GetParam()),
+        .minimize_capacity = std::get<8>(GetParam()),
         .hatless_pruning = false,
     };
   }
@@ -100,7 +102,7 @@ INSTANTIATE_TEST_SUITE_P(
     SolverTest, SolverTest,
     ::testing::Combine(::testing::Bool(), ::testing::Bool(), ::testing::Bool(),
                        ::testing::Bool(), ::testing::Bool(), ::testing::Bool(),
-                       ::testing::Bool(), ::testing::Bool()));
+                       ::testing::Bool(), ::testing::Bool(), ::testing::Bool()));
 
 TEST_P(SolverTest, InfeasibleBufferTooBig) {
   const Problem problem = {

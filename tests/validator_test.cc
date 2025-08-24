@@ -33,7 +33,7 @@ TEST(ValidatorTest, ValidatesGoodSolution) {
     .capacity = 2
   };
   // right # of offsets, in range, no overlaps
-  const Solution solution = {.offsets = {0, 0, 1, 0}};
+  const Solution solution = {.offsets = {0, 0, 1, 0}, .height = 2};
   EXPECT_EQ(Validate(problem, solution), kGood);
 }
 
@@ -46,7 +46,7 @@ TEST(ValidatorTest, ValidatesGoodSolutionWithGaps) {
     .capacity = 2
   };
   // right # of offsets, in range, no overlaps
-  const Solution solution = {.offsets = {0, 0}};
+  const Solution solution = {.offsets = {0, 0}, .height = 2};
   EXPECT_EQ(Validate(problem, solution), kGood);
 }
 
@@ -59,7 +59,7 @@ TEST(ValidatorTest, ValidatesGoodSolutionWithGapsEdgeCase) {
     .capacity = 2
   };
   // right # of offsets, in range, no overlaps
-  const Solution solution = {.offsets = {0, 0}};
+  const Solution solution = {.offsets = {0, 0}, .height = 2};
   EXPECT_EQ(Validate(problem, solution), kGood);
 }
 
@@ -74,7 +74,7 @@ TEST(ValidatorTest, ValidatesTetris) {
     .capacity = 3
   };
   // right # of offsets, in range, no overlaps
-  const Solution solution = {.offsets = {0, 1}};
+  const Solution solution = {.offsets = {0, 1}, .height = 3};
   EXPECT_EQ(Validate(problem, solution), kGood);
 }
 
@@ -108,7 +108,9 @@ TEST(ValidatorTest, ValidatesStairs) {
      },
     .capacity = 144
   };
-  const Solution solution = {.offsets = {30, 10, 60, 102, 74, 0}};
+  const Solution solution = {
+    .offsets = {30, 10, 60, 102, 74, 0}, .height = 144
+  };
   EXPECT_EQ(Validate(problem, solution), kGood);
 }
 
@@ -121,7 +123,10 @@ TEST(ValidatorTest, InvalidatesBadSolution) {
       },
       .capacity = 2
   };
-  const Solution solution = {.offsets = {0, 0}};  // wrong # of offsets
+  const Solution solution = {
+    .offsets = {0, 0}, // wrong # of offsets
+    .height = 2
+  };
   EXPECT_EQ(Validate(problem, solution), kBadSolution);
 }
 
@@ -135,7 +140,7 @@ TEST(ValidatorTest, InvalidatesFixedBuffer) {
       .capacity = 2
   };
   // last buffer needs offset @ 0
-  const Solution solution = {.offsets = {0, 0, 1}};
+  const Solution solution = {.offsets = {0, 0, 1}, .height = 2};
   EXPECT_EQ(Validate(problem, solution), kBadFixed);
 }
 
@@ -148,7 +153,10 @@ TEST(ValidatorTest, InvalidatesNegativeOffset) {
       },
       .capacity = 2
   };
-  const Solution solution = {.offsets = {0, 0, -1}};  // offset is negative
+  const Solution solution = {
+    .offsets = {0, 0, -1}, // offset is negative
+    .height = 2
+  };
   EXPECT_EQ(Validate(problem, solution), kBadOffset);
 }
 
@@ -162,8 +170,36 @@ TEST(ValidatorTest, InvalidatesOutOfRangeOffset) {
       .capacity = 2
   };
   // buffer lies outside range
-  const Solution solution = {.offsets = {0, 0, 2}};
+  const Solution solution = {.offsets = {0, 0, 2}, .height = 2};
   EXPECT_EQ(Validate(problem, solution), kBadOffset);
+}
+
+TEST(ValidatorTest, InvalidatesOutOfHeightRangeOffset) {
+  const Problem problem = {
+      .buffers = {
+          {.lifespan = {0, 1}, .size = 2},
+          {.lifespan = {1, 2}, .size = 1},
+          {.lifespan = {1, 2}, .size = 1},
+      },
+      .capacity = 3
+  };
+  // height too small
+  const Solution solution = {.offsets = {0, 0, 2}, .height = 2};
+  EXPECT_EQ(Validate(problem, solution), kBadHeight);
+}
+
+TEST(ValidatorTest, InvalidatesWithExtraHeight) {
+  const Problem problem = {
+      .buffers = {
+          {.lifespan = {0, 1}, .size = 2},
+          {.lifespan = {1, 2}, .size = 1},
+          {.lifespan = {1, 2}, .size = 1},
+      },
+      .capacity = 4
+  };
+  // height too small
+  const Solution solution = {.offsets = {0, 0, 2}, .height = 4};
+  EXPECT_EQ(Validate(problem, solution), kBadHeight);
 }
 
 TEST(ValidatorTest, InvalidatesOverlap) {
@@ -176,7 +212,7 @@ TEST(ValidatorTest, InvalidatesOverlap) {
       .capacity = 2
   };
   // final two buffers overlap
-  const Solution solution = {.offsets = {0, 0, 0}};
+  const Solution solution = {.offsets = {0, 0, 0}, .height = 2};
   EXPECT_EQ(Validate(problem, solution), kBadOverlap);
 }
 
@@ -189,7 +225,7 @@ TEST(ValidatorTest, InvalidatesMisalignment) {
       .capacity = 2
   };
   // offset of 1 isn't a multiple of 2
-  const Solution solution = {.offsets = {0, 1}};
+  const Solution solution = {.offsets = {0, 1}, .height = 2};
   EXPECT_EQ(Validate(problem, solution), kBadAlignment);
 }
 
@@ -202,7 +238,7 @@ TEST(ValidatorTest, InvalidatesGapOverlap) {
     .capacity = 2
   };
   // right # of offsets, in range, no overlaps
-  const Solution solution = {.offsets = {0, 0}};
+  const Solution solution = {.offsets = {0, 0}, .height = 2};
   EXPECT_EQ(Validate(problem, solution), kBadOverlap);
 }
 
