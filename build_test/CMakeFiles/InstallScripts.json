@@ -1,0 +1,33 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/fpedd/minimalloc/build_test/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/base/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/algorithm/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/cleanup/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/container/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/crc/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/debugging/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/flags/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/functional/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/hash/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/log/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/memory/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/meta/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/numeric/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/profiling/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/random/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/status/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/strings/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/synchronization/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/time/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/types/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/abseil-cpp/absl/utility/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/googletest/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/googletest/googlemock/cmake_install.cmake",
+		"/home/fpedd/minimalloc/build_test/external/googletest/googletest/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

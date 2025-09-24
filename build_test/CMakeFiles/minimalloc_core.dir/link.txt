@@ -1,0 +1,2 @@
+/usr/bin/ar qc libminimalloc_core.a CMakeFiles/minimalloc_core.dir/src/minimalloc.cc.o CMakeFiles/minimalloc_core.dir/src/solver.cc.o CMakeFiles/minimalloc_core.dir/src/sweeper.cc.o CMakeFiles/minimalloc_core.dir/src/converter.cc.o CMakeFiles/minimalloc_core.dir/src/validator.cc.o
+/usr/bin/ranlib libminimalloc_core.a

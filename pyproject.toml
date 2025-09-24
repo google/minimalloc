@@ -1,0 +1,67 @@
+[build-system]
+requires = [
+    "setuptools>=45",
+    "wheel",
+    "pybind11>=2.6.0",
+    "cmake>=3.25.1",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "minimalloc"
+version = "1.0.0"
+description = "Lightweight memory allocator for hardware-accelerated machine learning"
+authors = [{name = "Google LLC"}]
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["memory", "allocation", "machine learning", "compiler", "optimization"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers", 
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9", 
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "pybind11>=2.6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov",
+    "black",
+    "mypy",
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme", 
+]
+
+[project.urls]
+Homepage = "https://github.com/google/minimalloc"
+Repository = "https://github.com/google/minimalloc"
+Documentation = "https://github.com/google/minimalloc#readme"
+Issues = "https://github.com/google/minimalloc/issues"
+
+[tool.setuptools.packages.find]
+where = ["python"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

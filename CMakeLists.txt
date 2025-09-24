@@ -81,3 +81,47 @@ target_link_libraries(validator_test
 add_test(NAME validator_test COMMAND validator_test)
 
 include(GoogleTest)
+
+# Python bindings (optional, only when building with Python)
+if(DEFINED PYTHON_EXECUTABLE)
+    # Find Python and pybind11
+    find_package(Python COMPONENTS Interpreter Development REQUIRED)
+    find_package(pybind11 REQUIRED)
+
+    # Add the MiniMalloc core library
+    add_library(minimalloc_core STATIC
+        src/minimalloc.cc
+        src/solver.cc
+        src/sweeper.cc
+        src/converter.cc
+        src/validator.cc
+    )
+    target_include_directories(minimalloc_core PUBLIC src/)
+    target_link_libraries(minimalloc_core
+        absl::flags_parse
+        absl::flags
+        absl::statusor
+        absl::status
+        absl::strings
+        absl::time
+        absl::base
+    )
+
+    # Add the Python binding
+    pybind11_add_module(_core python/minimalloc/_core.cpp)
+    target_link_libraries(_core PRIVATE minimalloc_core)
+    target_compile_definitions(_core PRIVATE VERSION_INFO="${PROJECT_VERSION}")
+
+    # Set the output name and location
+    set_target_properties(_core PROPERTIES
+        OUTPUT_NAME "_core"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+    )
+
+    # Ensure proper RPATH/runpath for the shared library
+    if(APPLE)
+        set_target_properties(_core PROPERTIES INSTALL_RPATH "@loader_path")
+    else()
+        set_target_properties(_core PROPERTIES INSTALL_RPATH "$ORIGIN")
+    endif()
+endif()

@@ -1,0 +1,33 @@
+# Include C++ source files
+include src/*.cc
+include src/*.h
+include external/abseil-cpp/**/*
+include external/googletest/**/*
+
+# Include CMake files
+include CMakeLists.txt
+include *.cmake
+
+# Include Python package files
+recursive-include python/minimalloc *.py
+include python/minimalloc/_core.cpp
+
+# Include documentation and license
+include README.md
+include LICENSE
+include CONTRIBUTING.md
+
+# Include examples and benchmarks
+recursive-include benchmarks *.csv
+recursive-include python/examples *.py
+recursive-include python/tests *.py
+
+# Exclude build artifacts
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude .git*
+global-exclude *.so
+global-exclude *.dylib
+global-exclude *.dll
