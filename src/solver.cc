@@ -21,12 +21,14 @@ limitations under the License.
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
+#include <iomanip>
 #include <limits>
 #include <optional>
 #include <vector>
 
 #include "absl/algorithm/container.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/time/clock.h"
@@ -106,10 +108,23 @@ class SolverImpl {
     if (params_.preordering_heuristics.size() > 1) return RoundRobin();
     PreorderingComparator preordering_comparator(
         params_.preordering_heuristics.back());
+    DLOG(INFO) << __func__ << " (Start) " << preordering_comparator
+        << ", node limit   " << nodes_remaining_;
     for (const Partition& partition : sweep_result_.partitions) {
       absl::Status status = SubSolve(partition, preordering_comparator);
-      if (!status.ok()) return status;
+      if (!status.ok()) {
+        DLOG(INFO) << __func__ << " (End)   " << preordering_comparator
+            << ", node visited "
+            << std::numeric_limits<int64_t>::max() - nodes_remaining_
+            << ", status " << absl::StatusCodeToString(status.code());
+        return status;
+      }
     }
+    DLOG(INFO) << __func__ << " (End)   " << preordering_comparator
+        << ", node visited "
+        << std::numeric_limits<int64_t>::max() - nodes_remaining_
+        << ", status " << absl::StatusCodeToString(absl::StatusCode::kOk);
+    UpdateSolutionHeight();
     return solution_;
   }
 
@@ -125,16 +140,31 @@ class SolverImpl {
         PreorderingComparator preordering_comparator(heuristic);
         nodes_remaining_ = node_limit;
         status = absl::OkStatus();
+        DLOG(INFO) << __func__ << " (Start) " << preordering_comparator
+            << ", node limit   " << nodes_remaining_;
         for (const Partition& partition : sweep_result_.partitions) {
           status = SubSolve(partition, preordering_comparator);
           // The 'aborted' code means this strategy exhausted its node limit.
-          if (status.code() == absl::StatusCode::kAborted) break;
-          if (!status.ok()) return status;
+          if (!status.ok()) {
+            DLOG(INFO) << __func__ << " (End)   " << preordering_comparator
+                << ", node visited "
+                << node_limit - nodes_remaining_
+                << ", status " << absl::StatusCodeToString(status.code());
+            if (absl::IsAborted(status)) break;
+            return status;
+          }
         }
-        if (status.ok()) break;
+        if (status.ok()) {
+          DLOG(INFO) << __func__ << " (End)   " << preordering_comparator
+              << ", node visited "
+              << node_limit - nodes_remaining_
+              << ", status " << absl::StatusCodeToString(absl::StatusCode::kOk);
+          break;
+        } 
       }
       if (status.ok()) break;
     }
+    UpdateSolutionHeight();
     return solution_;
   }
 
@@ -207,13 +237,16 @@ class SolverImpl {
     }
     // The floor of any section cannot be lower than its lowest minimum offset.
     for (const SectionIdx s_idx : affected_sections) {
-      Offset min_offset = INT_MAX;
+      Offset min_offset = std::numeric_limits<Offset>::max();
       for (const BufferIdx other_idx : sweep_result_.sections[s_idx]) {
         if (assignment_.offsets[other_idx] == kNoOffset) {
           min_offset = std::min(min_offset, min_offsets_[other_idx]);
         }
       }
-      if (min_offset != INT_MAX && section_data_[s_idx].floor < min_offset) {
+      if (
+        min_offset != std::numeric_limits<Offset>::max() &&
+        section_data_[s_idx].floor < min_offset
+      ) {
         section_changes.push_back(
             {.section_idx = s_idx, .floor = section_data_[s_idx].floor});
         section_data_[s_idx].floor = min_offset;
@@ -326,7 +359,7 @@ class SolverImpl {
   Offset CalcMinHeight(
       const std::vector<PreorderData>& preordering,
       const std::vector<OrderData>& ordering) {
-    Offset min_height = INT_MAX;
+    Offset min_height = std::numeric_limits<Offset>::max();
     for (const auto [offset, preorder_idx] : ordering) {
       const BufferIdx buffer_idx = preordering[preorder_idx].buffer_idx;
       const Buffer& buffer = problem_.buffers[buffer_idx];
@@ -343,11 +376,18 @@ class SolverImpl {
       const PreorderingComparator& preordering_comparator,
       const std::vector<PreorderData>& preordering,
       const std::vector<OrderData>& orig_ordering,
-      Offset min_offset,
-      PreorderIdx min_preorder_idx) {
-    if (nodes_remaining_ <= 0) return absl::StatusCode::kAborted;
+      const Offset min_offset,
+      const PreorderIdx min_preorder_idx) {
+    DLOG(INFO) << __func__ << " (Start) " << partition;
+    if (nodes_remaining_ <= 0) {
+      DLOG(INFO) << __func__ << " (End)   " << partition << ", status "
+          << absl::StatusCodeToString(absl::StatusCode::kAborted);
+      return absl::StatusCode::kAborted;
+    }
     --nodes_remaining_;
     if (absl::Now() - start_time_ > params_.timeout || cancelled_) {
+      DLOG(INFO) << __func__ << " (End)   " << partition << ", status "
+          << absl::StatusCodeToString(absl::StatusCode::kDeadlineExceeded);
       return absl::StatusCode::kDeadlineExceeded;
     }
     const std::vector<OrderData> ordering =
@@ -357,6 +397,8 @@ class SolverImpl {
       for (const BufferIdx buffer_idx : partition.buffer_idxs) {
         solution_.offsets[buffer_idx] = assignment_.offsets[buffer_idx];
       }
+      DLOG(INFO) << __func__ << " (End)  " << partition << ", status "
+          << absl::StatusCodeToString(absl::StatusCode::kOk);
       return absl::StatusCode::kOk;  // We've reached a leaf node.
     }
     const Offset min_height = CalcMinHeight(preordering, ordering);
@@ -383,21 +425,31 @@ class SolverImpl {
           UpdateSectionData(affected_sections, buffer_idx);
       absl::StatusCode status_code = absl::StatusCode::kNotFound;
       if (!fixed_offset_failure && Check(partition, offset)) {
+        DLOG(INFO) << "DFS (Enter) Depth: " << std::setw(5) << depth_++
+            << ", BufferIdx: " << std::setw(5) << buffer_idx;
         status_code =
             params_.dynamic_decomposition
                 ? DynamicallyDecompose(partition, preordering_comparator,
                     preordering, ordering, offset, preorder_idx, buffer_idx)
                 : SearchSolutions(partition, preordering_comparator,
                     preordering, ordering, offset, preorder_idx);
+        DLOG(INFO) << "DFS (Leave) Depth: " << std::setw(5) << --depth_
+            << ", BufferIdx: " << std::setw(5) << buffer_idx;
       }
       RestoreSectionData(section_changes, buffer_idx);
       if (offset_changes) RestoreMinOffsets(*offset_changes);
       assignment_.offsets[buffer_idx] = kNoOffset;  // Mark it unallocated.
       // If a feasible solution *or* timeout, abort search.
-      if (status_code != absl::StatusCode::kNotFound) return status_code;
+      if (status_code != absl::StatusCode::kNotFound) {
+        DLOG(INFO) << __func__ << " (End)  " << partition << ", status "
+            << absl::StatusCodeToString(status_code);
+        return status_code;
+      }
       if (!offset_changes && params_.hatless_pruning) break;
     }
     ++backtracks_;
+    DLOG(INFO) << __func__ << " (End)  " << partition << ", status "
+        << absl::StatusCodeToString(absl::StatusCode::kNotFound);
     return absl::StatusCode::kNotFound;  // No feasible solution found.
   }
 
@@ -408,9 +460,9 @@ class SolverImpl {
       const PreorderingComparator& preordering_comparator,
       const std::vector<PreorderData>& preordering,
       const std::vector<OrderData>& orig_ordering,
-      Offset min_offset,
-      PreorderIdx min_preorder_idx,
-      BufferIdx buffer_idx) {
+      const Offset min_offset,
+      const PreorderIdx min_preorder_idx,
+      const BufferIdx buffer_idx) {
     solution_.offsets[buffer_idx] = assignment_.offsets[buffer_idx];
     // Reduce the cuts between sections spanned by this buffer (and store all
     // zero-cut section indices into 'cutpoints', to be solved separately).
@@ -466,6 +518,16 @@ class SolverImpl {
     return status_code;
   }
 
+  void UpdateSolutionHeight() {
+    const auto num_buffers = problem_.buffers.size();
+    for (BufferIdx buffer_idx = 0; buffer_idx < num_buffers; buffer_idx++) {
+      const Offset buffer_size = problem_.buffers[buffer_idx].size;
+      const Offset buffer_offset = solution_.offsets[buffer_idx];
+      solution_.height = std::max(
+        solution_.height, buffer_size + buffer_offset);
+    }
+  }
+
   const SolverParams& params_;
   const absl::Time start_time_;
   const Problem& problem_;
@@ -479,6 +541,9 @@ class SolverImpl {
   std::vector<SectionData> section_data_;
   std::vector<CutCount> cuts_;
   int64_t nodes_remaining_ = std::numeric_limits<int64_t>::max();
+
+  // debug
+  int64_t depth_ = 0;
 };  // class SolverImpl
 
 }  // namespace
@@ -501,6 +566,11 @@ bool PreorderingComparator::operator()(
   return a.buffer_idx < b.buffer_idx;
 }
 
+std::ostream& operator<<(std::ostream& os, const PreorderingComparator& c) {
+  os << "preorder heuristic " << c.preordering_heuristic_;
+  return os;
+}
+
 Solver::Solver() {}
 
 Solver::Solver(const SolverParams& params) : params_(params) {}
@@ -516,9 +586,41 @@ absl::StatusOr<Solution> Solver::Solve(const Problem& problem) {
 absl::StatusOr<Solution> Solver::SolveWithStartTime(const Problem& problem,
                                                     absl::Time start_time) {
   const SweepResult sweep_result = Sweep(problem);
-  SolverImpl solver_impl(
-      params_, start_time, problem, sweep_result, &backtracks_, cancelled_);
-  return solver_impl.Solve();
+  if (!params_.minimize_capacity) {
+    SolverImpl solver_impl(
+        params_, start_time, problem, sweep_result, &backtracks_, cancelled_);
+    return solver_impl.Solve();
+  }
+
+  // binary search the minimum viable capacity
+  Problem problem_bs = problem;
+  absl::StatusOr<Solution> solution(absl::Status(
+    absl::StatusCode::kNotFound, "Not found any valid capacity."));
+  Capacity lo_capacity = 0, hi_capacity = problem.capacity;
+  while (lo_capacity <= hi_capacity) {
+    Capacity mid_capacity = (lo_capacity + hi_capacity) / 2;
+    problem_bs.capacity = mid_capacity;
+    SolverImpl solver_impl(
+        params_, start_time, problem_bs, sweep_result, &backtracks_, cancelled_);
+    const absl::Time start_time = absl::Now();
+    auto solution_bs = solver_impl.Solve();
+    const absl::Time end_time = absl::Now();
+    if (!solution_bs.ok()) {
+      DLOG(INFO) << __func__ << "Binary search, capacity " << mid_capacity
+          << ", elapsed time " << std::fixed << std::setprecision(3)
+          << absl::ToDoubleSeconds(end_time - start_time)
+          << ", status " << absl::StatusCodeToString(solution_bs.status().code());
+      lo_capacity = mid_capacity + 1;
+    } else {
+      DLOG(INFO) << __func__ << "Binary search, capacity " << mid_capacity
+          << ", elapsed time " << std::fixed << std::setprecision(3)
+          << absl::ToDoubleSeconds(end_time - start_time)
+          << ", status " << absl::StatusCodeToString(absl::StatusCode::kOk);
+      solution = solution_bs;
+      hi_capacity = solution->height - 1; // mid_capacity - 1;
+    }
+  }
+  return solution;
 }
 
 int64_t Solver::get_backtracks() const { return backtracks_; }

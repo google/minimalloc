@@ -27,14 +27,19 @@ ValidationResult Validate(const Problem& problem, const Solution& solution) {
   // Check that the number of buffers matches the number of offsets.
   if (problem.buffers.size() != solution.offsets.size()) return kBadSolution;
   // Check fixed buffers & check that offsets are within the allowable range.
+  Offset max_height = 0;
   for (auto buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
     const Buffer& buffer = problem.buffers[buffer_idx];
     const Offset offset = solution.offsets[buffer_idx];
+    const Offset height = offset + buffer.size;
+    max_height = std::max(max_height, height);
     if (buffer.offset && *buffer.offset != offset) return kBadFixed;
     if (offset < 0) return kBadOffset;
-    if (offset + buffer.size > problem.capacity) return kBadOffset;
+    if (height > problem.capacity) return kBadOffset;
+    if (height > solution.height) return kBadHeight;
     if (offset % buffer.alignment != 0) return kBadAlignment;
   }
+  if (max_height != solution.height) return kBadHeight;
   // Check that no two buffers overlap in both space and time, the O(n^2) way.
   for (BufferIdx i = 0; i < problem.buffers.size(); ++i) {
     const Buffer& buffer_i = problem.buffers[i];
