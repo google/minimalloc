@@ -78,7 +78,7 @@ std::string ToCsv(const Problem& problem, Solution* solution, bool old_format) {
   const bool include_alignment = IncludeAlignment(problem);
   const bool include_hint = IncludeHint(problem);
   const bool include_gaps = IncludeGaps(problem);
-  const int addend = old_format ? -1 : 0;
+  const int64_t addend = old_format ? -1 : 0;
   std::vector<std::string> header = {std::string(kId),
                                      std::string(old_format ? kStart : kLower),
                                      std::string(old_format ? kEnd : kUpper),
@@ -122,13 +122,13 @@ std::string ToCsv(const Problem& problem, Solution* solution, bool old_format) {
 absl::StatusOr<Problem> FromCsv(absl::string_view input) {
   int64_t addend = 0;
   Problem problem;
-  absl::flat_hash_map<std::string, int> col_map;
+  absl::flat_hash_map<std::string, int64_t> col_map;
   std::vector<absl::string_view> records = absl::StrSplit(input, '\n');
   for (const std::string_view& record : records) {
     if (record.empty()) break;
     std::vector<absl::string_view> fields = absl::StrSplit(record, ',');
     if (col_map.empty()) {  // Need to read header row (to determine columns).
-      for (int field_idx = 0; field_idx < fields.size(); ++field_idx) {
+      for (int64_t field_idx = 0; field_idx < fields.size(); ++field_idx) {
         // If column reads 'buffer_id', change it to 'buffer' for consistency.
         absl::string_view col_name = fields[field_idx];
         if (col_name == kBegin) col_name = kLower;
@@ -170,7 +170,7 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input) {
     }
     std::optional<Offset> hint;
     if (col_map.contains(kHint)) {
-      int hint_val = -1;
+      int64_t hint_val = -1;
       if (!absl::SimpleAtoi(fields[col_map[kHint]], &hint_val)) {
         return absl::InvalidArgumentError("Improperly formed hint");
       }
@@ -219,7 +219,7 @@ absl::StatusOr<Problem> FromCsv(absl::string_view input) {
     }
     std::optional<Offset> offset;
     if (col_map.contains(kOffset)) {
-      int offset_val = -1;
+      int64_t offset_val = -1;
       if (!absl::SimpleAtoi(fields[col_map[kOffset]], &offset_val)) {
         return absl::InvalidArgumentError("Improperly formed offset");
       }

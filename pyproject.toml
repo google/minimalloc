@@ -1,0 +1,39 @@
+[build-system]
+requires = ["scikit-build-core>=0.11", "pybind11>=3.0"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "minimalloc"
+description = "Python bindings for MiniMalloc memory allocator"
+readme = "README.md"
+version = "0.1.0"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [
+  { name = "Michael D. Moffitt", email = "moffitt@google.com" },
+  { name = "Fabian Peddinghaus", email = "fabian.peddinghaus@axelera.ai" },
+]
+keywords = ["memory", "allocation", "optimization", "allocator"]
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=8.0,<9.0"]
+dev = ["ruff>=0.3", "mypy>=1.8", "pytest>=8.0,<9.0"]
+
+[tool.scikit-build-core]
+wheel.expand-macos-universal-tags = true
+wheel.packages = ["python/minimalloc"]
+
+[tool.ruff]
+line-length = 80
+extend-exclude = ["external"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "PT", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true # For C++ extensions
+exclude = ["external/"]

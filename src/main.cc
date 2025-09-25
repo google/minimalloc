@@ -60,7 +60,8 @@ ABSL_FLAG(bool, monotonic_floor, true,
           "Requires the solution floor to increase monotonically.");
 ABSL_FLAG(bool, hatless_pruning, true,
           "Prunes alternate solutions whenever a buffer has nothing overhead.");
-ABSL_FLAG(bool, minimize_capacity, false, "Minimize the required memory capacity.");
+ABSL_FLAG(bool, minimize_capacity, false,
+          "Minimize the required memory capacity.");
 
 ABSL_FLAG(std::string, preordering_heuristics, "WAT,TAW,TWA",
           "Static preordering heuristics to attempt.");
@@ -71,26 +72,28 @@ ABSL_FLAG(bool, print_solution, false, "Prints the solution in LaTeX");
 const float kWidth = 17;
 const float kHeight = 8.5;
 
-void PrintSolution(const minimalloc::Problem& problem,
-                   const minimalloc::Solution& solution) {
-  std::ostream& os = std::cout;
+void PrintSolution(const minimalloc::Problem &problem,
+                   const minimalloc::Solution &solution) {
+  std::ostream &os = std::cout;
   os << std::endl;
   os << "\\documentclass[tikz]{standalone}" << std::endl;
   os << "\\usepackage{tikz}" << std::endl;
   os << "\\usepackage{pgfplots}" << std::endl;
   os << "\\begin{document}" << std::endl;
   os << "\\begin{tikzpicture}" << std::endl;
-  minimalloc::TimeValue min_time = std::numeric_limits<minimalloc::TimeValue>::max();
+  minimalloc::TimeValue min_time =
+      std::numeric_limits<minimalloc::TimeValue>::max();
   minimalloc::TimeValue max_time = 0;
-  for (const minimalloc::Buffer& buffer : problem.buffers) {
+  for (const minimalloc::Buffer &buffer : problem.buffers) {
     min_time = std::min(min_time, buffer.lifespan.lower());
     max_time = std::max(max_time, buffer.lifespan.upper());
   }
   const float scale_x = kWidth / (max_time - min_time);
   const float scale_y = kHeight / problem.capacity;
-  for (int buffer_idx = 0; buffer_idx < problem.buffers.size(); ++buffer_idx) {
-    const minimalloc::Buffer& buffer = problem.buffers[buffer_idx];
-    for (int i = 0; i <= buffer.gaps.size(); ++i) {
+  for (int64_t buffer_idx = 0; buffer_idx < problem.buffers.size();
+       ++buffer_idx) {
+    const minimalloc::Buffer &buffer = problem.buffers[buffer_idx];
+    for (int64_t i = 0; i <= buffer.gaps.size(); ++i) {
       auto left = (i == 0) ? buffer.lifespan.lower()
                            : buffer.gaps[i - 1].lifespan.upper();
       auto right = (i == buffer.gaps.size()) ? buffer.lifespan.upper()
@@ -101,13 +104,13 @@ void PrintSolution(const minimalloc::Problem& problem,
       const float w = scale_x * (right - left);
       const float h = scale_y * buffer.size;
       const std::string color = "lightgray";
-      os << "\\fill[" << color << ",draw=darkgray] (" << x << "," << y
-         << ")" << " rectangle (" << x + w << "," << y + h << ");  % height = "
-         << h << ", ID = " << buffer.id << std::endl;
+      os << "\\fill[" << color << ",draw=darkgray] (" << x << "," << y << ")"
+         << " rectangle (" << x + w << "," << y + h << ");  % height = " << h
+         << ", ID = " << buffer.id << std::endl;
 
       // If you don't want to see the buffer.id, comment this line
-      os << "\\node at (" << x + w / 2 << "," << y + h / 2 << ")" << " {" << buffer.id << "};" << std::endl;
-
+      os << "\\node at (" << x + w / 2 << "," << y + h / 2 << ")" << " {"
+         << buffer.id << "};" << std::endl;
     }
   }
   const float w = scale_x * (max_time - min_time);
@@ -146,7 +149,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   std::string csv((std::istreambuf_iterator<char>(ifs)),
-                  (std::istreambuf_iterator<char>()   ));
+                  (std::istreambuf_iterator<char>()));
   absl::StatusOr<minimalloc::Problem> problem = minimalloc::FromCsv(csv);
   if (!problem.ok()) {
     LOG(ERROR) << problem.status();
@@ -158,7 +161,7 @@ int main(int argc, char* argv[]) {
   absl::StatusOr<minimalloc::Solution> solution = solver.Solve(*problem);
   const absl::Time end_time = absl::Now();
   LOG(INFO) << "Elapsed time " << std::fixed << std::setprecision(3)
-      << absl::ToDoubleSeconds(end_time - start_time);
+            << absl::ToDoubleSeconds(end_time - start_time) << "s";
   if (!solution.ok()) {
     LOG(ERROR) << solution.status();
     return 1;

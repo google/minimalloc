@@ -1,0 +1,41 @@
+# Build artifacts
+build/
+dist/
+*.o
+*.so
+*.a
+*.pyc
+__pycache__/
+*.egg-info/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*~
+CLAUDE.md
+
+# Environment
+.env
+venv/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.coverage
+.pytest_cache/
+*.gcov
+*.gcda
+*.gcno
+
+# Logs
+*.log
