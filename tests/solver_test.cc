@@ -92,8 +92,8 @@ class SolverTest
         .static_preordering = std::get<5>(GetParam()),
         .dynamic_decomposition = std::get<6>(GetParam()),
         .monotonic_floor = std::get<7>(GetParam()),
-        .minimize_capacity = std::get<8>(GetParam()),
         .hatless_pruning = false,
+        .minimize_capacity = std::get<8>(GetParam()),
     };
   }
 };
