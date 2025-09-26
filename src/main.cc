@@ -27,6 +27,8 @@ limitations under the License.
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/globals.h"
+#include "absl/log/initialize.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_split.h"
@@ -118,6 +120,9 @@ void PrintSolution(const minimalloc::Problem& problem,
 
 // Solves a given problem using the Solver.
 int main(int argc, char* argv[]) {
+  absl::SetStderrThreshold(absl::LogSeverityAtLeast::kInfo);
+  absl::EnableLogPrefix(false);
+  absl::InitializeLog();
   absl::ParseCommandLine(argc, argv);
   minimalloc::SolverParams params = {
       .timeout = absl::GetFlag(FLAGS_timeout),

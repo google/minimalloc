@@ -15,6 +15,7 @@ add_executable(minimalloc
 target_link_libraries(minimalloc
   absl::flags_parse
   absl::log
+  absl::log_initialize
   absl::statusor
 )
 
