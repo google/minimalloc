@@ -12,7 +12,7 @@ Source code for our [ASPLOS 2023](https://www.asplos-conference.org/asplos2023/)
 
 An increasing number of deep learning workloads are being supported by *hardware acceleration*.  In order to unlock the maximum performance of a hardware accelerator, a machine learning model must first be carefully mapped onto its various internal components by way of a *compiler*.  One especially important problem faced by a production-class compiler is that of *memory allocation*, whereby a set of buffers with predefined lifespans are mapped onto offsets in global memory.  Since this allocation is performed statically, the compiler has the freedom to place buffers strategically, but must nevertheless wrestle with a combinatorial explosion in the number of assignment possibilities.
 
-**MiniMalloc** is a state-of-the-art algorithm designed specifically for static memory allocation that uses several novel search techiques in order to solve such problems efficiently and effectively.
+**MiniMalloc** is a state-of-the-art algorithm designed specifically for static memory allocation that uses several novel search techniques in order to solve such problems efficiently and effectively.
 
 ## How it works
 
@@ -57,6 +57,37 @@ b2,3,9,4,8
 b3,0,9,4,4
 b4,9,21,4,4
 b5,0,21,4,0
+```
+
+## Python bindings
+
+We also provide Python bindings for MiniMalloc. You can install them with pip:
+
+```bash
+$ pip install .
+```
+
+When installed, you can use the package as follows:
+
+```python
+import minimalloc as mm
+problem = mm.from_csv_file("benchmarks/examples/input.12.csv")
+problem.capacity = 12
+solver = mm.Solver()
+solution = solver.solve(problem)
+print(solution) # Solution(offsets=[8, 8, 4, 4, 0])
+```
+
+During development, you can install the package in "editable" mode with:
+
+```bash
+$ pip install -e ".[dev]"
+```
+
+and run formatters, type checkers, and tests with:
+
+```bash
+$ ruff format . && ruff check . --fix && mypy . && pytest python
 ```
 
 ## How to cite?

@@ -17,23 +17,23 @@ limitations under the License.
 #ifndef MINIMALLOC_SRC_VALIDATOR_H_
 #define MINIMALLOC_SRC_VALIDATOR_H_
 
-#include "minimalloc.h"
 #include "absl/base/attributes.h"
+#include "minimalloc.h"
 
 namespace minimalloc {
 
 enum ValidationResult {
   kGood = 0,
   kBadSolution = 1,  // Solution structure is incorrect, eg. wrong # of offsets.
-  kBadFixed = 2,  // A buffer w/ a fixed offset is assigned somewhere else.
-  kBadOffset = 3,  // The offset is out-of-bounds, ie. negative or beyond cap.
-  kBadOverlap = 4,  // At least one pair of buffers overlaps in space and time.
+  kBadFixed = 2,     // A buffer w/ a fixed offset is assigned somewhere else.
+  kBadOffset = 3,    // The offset is out-of-bounds, ie. negative or beyond cap.
+  kBadOverlap = 4,   // At least one pair of buffers overlaps in space and time.
   kBadAlignment = 5,  // At least one buffer was not properly aligned.
-  kBadHeight = 6  // Solution height is not buffers' maximum height
+  kBadHeight = 6      // Solution height is not buffers' maximum height
 };
 
-ValidationResult Validate(
-    const Problem& problem, const Solution& solution) ABSL_MUST_USE_RESULT;
+ValidationResult Validate(const Problem& problem,
+                          const Solution& solution) ABSL_MUST_USE_RESULT;
 
 }  // namespace minimalloc
 

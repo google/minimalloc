@@ -22,9 +22,9 @@ limitations under the License.
 #include <string>
 #include <vector>
 
-#include "minimalloc.h"
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
+#include "minimalloc.h"
 
 namespace minimalloc {
 
@@ -82,20 +82,20 @@ struct SolverParams {
   MinimizeCapacity minimize_capacity = false;
 
   // The static preordering heuristics to attempt.
-  std::vector<PreorderingHeuristic> preordering_heuristics =
-      {"WAT", "TAW", "TWA"};
+  std::vector<PreorderingHeuristic> preordering_heuristics = {"WAT", "TAW",
+                                                              "TWA"};
 };
 
 // Data used to help establish a static preordering of buffers.
 struct PreorderData {
   Area area;  // The total area (i.e., space x time) consumed by this buffer.
-  TimeValue lower;  // When does the buffer start?
+  TimeValue lower;    // When does the buffer start?
   uint64_t overlaps;  // The number of pairwise overlaps with other buffers.
-  int sections;  // The number of sections spanned by this buffer.
-  int64_t size;  // The size of the buffer.
-  int total;  // The (maximum) total sum in any of this buffer's sections.
+  int64_t sections;   // The number of sections spanned by this buffer.
+  int64_t size;       // The size of the buffer.
+  int64_t total;    // The (maximum) total sum in any of this buffer's sections.
   TimeValue upper;  // When does the buffer end?
-  int64_t width;  // The width of this buffer's lifespan.
+  int64_t width;    // The width of this buffer's lifespan.
   BufferIdx buffer_idx;  // An index into a Problem's list of buffers.
 };
 
@@ -103,7 +103,8 @@ class PreorderingComparator {
  public:
   explicit PreorderingComparator(const PreorderingHeuristic& h);
   bool operator()(const PreorderData& a, const PreorderData& b) const;
-  friend std::ostream& operator<<(std::ostream& os, const PreorderingComparator& c);
+  friend std::ostream& operator<<(std::ostream& os,
+                                  const PreorderingComparator& c);
 
  private:
   PreorderingHeuristic preordering_heuristic_;

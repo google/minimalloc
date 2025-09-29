@@ -169,13 +169,13 @@ SweepResult Sweep(const Problem& problem) {
       if (point.endpoint) alive.erase(buffer_idx);
       const SectionRange section_range =
           {buffer_idx_to_section_start[buffer_idx],
-           (int)result.sections.size()};
+           (int64_t)result.sections.size()};
       const SectionSpan section_span = {section_range, point.window};
       result.buffer_data[buffer_idx].section_spans.push_back(section_span);
       // If the alives are empty, the span of this partition is now known.
       if (alive.empty()) {
         result.partitions.back().section_range =
-            {last_section_idx, (int)result.sections.size()};
+            {last_section_idx, (int64_t)result.sections.size()};
         last_section_idx = result.sections.size();
       }
     }

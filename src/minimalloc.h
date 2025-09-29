@@ -28,7 +28,7 @@ limitations under the License.
 // MiniMalloc is a lightweight memory allocator for hardware-accelerated ML.
 namespace minimalloc {
 
-template<typename T>
+template <typename T>
 struct Interval {
   T lower_ = 0;
   T upper_ = 0;
@@ -44,7 +44,8 @@ struct Interval {
     return upper_ < other.upper_;
   }
 
-  friend std::ostream& operator<<(std::ostream& os, const Interval<T>& interval) {
+  friend std::ostream& operator<<(std::ostream& os,
+                                  const Interval<T>& interval) {
     os << "[" << interval.lower() << ", " << interval.upper() << ")";
     return os;
   }
@@ -59,7 +60,7 @@ using Lifespan = Interval<TimeValue>;
 using Window = Interval<Offset>;
 
 struct Gap {
-  Lifespan lifespan;  // The interval where this gap applies.
+  Lifespan lifespan;             // The interval where this gap applies.
   std::optional<Window> window;  // The space (if any) consumed within this gap.
   bool operator==(const Gap& x) const;
 };
@@ -67,7 +68,7 @@ struct Gap {
 struct Buffer {
   std::string id;  // A unique identifier for this buffer (used in file I/O).
   Lifespan lifespan = {0, 0};  // Half-open.
-  int64_t size = 0;  // The amount of memory allocated during the lifespan.
+  int64_t size = 0;       // The amount of memory allocated during the lifespan.
   int64_t alignment = 1;  // The lowest common denominator of assigned offsets.
   std::vector<Gap> gaps;  // Slots where this buffer is inactive.
   std::optional<Offset> offset;  // If present, the fixed pos. of this buffer.

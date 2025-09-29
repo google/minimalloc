@@ -39,14 +39,14 @@ limitations under the License.
 namespace minimalloc {
 namespace {
 
-using PreorderIdx = int;  // An index into a preordered buffer list.
+using PreorderIdx = int64_t;  // An index into a preordered buffer list.
 
-constexpr int kNoOffset = -1;
+constexpr int64_t kNoOffset = -1;
 
 // Used to incrementally maintain data about sections during search.
 struct SectionData {
   Offset floor = 0;  // The lowest viable offset for any buffer in this section.
-  int total = 0;  // A sum of the total unallocated buffer sizes in the section.
+  int64_t total = 0;  // A sum of the total unallocated buffer sizes in the section.
 };
 
 // Data used to help establish a dynamic ordering of buffers.
@@ -178,7 +178,7 @@ class SolverImpl {
     preordering.reserve(partition.buffer_idxs.size());
     for (const BufferIdx buffer_idx : partition.buffer_idxs) {
       const Buffer& buffer = problem_.buffers[buffer_idx];
-      int total = 0;
+      int64_t total = 0;
       const BufferData& buffer_data = sweep_result_.buffer_data[buffer_idx];
       const std::vector<SectionSpan>& section_spans = buffer_data.section_spans;
       for (const SectionSpan& section_span : section_spans) {
@@ -188,7 +188,7 @@ class SolverImpl {
           total = std::max(total, section_data_[s_idx].total);
         }
       }
-      int sections = section_spans.back().section_range.upper() -
+      int64_t sections = section_spans.back().section_range.upper() -
                      section_spans.front().section_range.lower();
       preordering.push_back({
         .area = buffer.area(),
@@ -480,7 +480,7 @@ class SolverImpl {
               orig_ordering, min_offset, min_preorder_idx);
     } else {
       cutpoints.push_back(partition.section_range.upper());
-      for (int c_idx = 1; c_idx < cutpoints.size(); ++c_idx) {
+      for (int64_t c_idx = 1; c_idx < cutpoints.size(); ++c_idx) {
         // Determine the range of this sub-partition.
         const SectionRange section_range =
             {cutpoints[c_idx - 1], cutpoints[c_idx]};
