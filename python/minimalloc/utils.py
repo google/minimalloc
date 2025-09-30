@@ -15,16 +15,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from pathlib import Path
+
 from . import _minimalloc as mm
 
 
-def from_csv_file(path: str) -> mm.Problem:
+def from_csv_file(path: Path) -> mm.Problem | None:
     """Load a Problem instance from a CSV file."""
     with open(path) as f:
-        return mm.from_csv(f.read())
+        problem = mm.from_csv(f.read())
+    return problem
 
 
-def to_csv_file(problem: mm.Problem, path: str) -> None:
+def to_csv_file(
+    path: Path, problem: mm.Problem, solution: mm.Solution | None = None
+) -> None:
     """Save a Problem instance to a CSV file."""
     with open(path, "w") as f:
-        f.write(mm.to_csv(problem))
+        f.write(mm.to_csv(problem, solution))

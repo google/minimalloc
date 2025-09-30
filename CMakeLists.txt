@@ -1,17 +1,19 @@
 cmake_minimum_required(VERSION 3.25.1)
-project(MiniMalloc)
+project(MiniMalloc LANGUAGES CXX)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Ensure PIC for Python module compatibility
+# PIC for Python module compatibility
 if(SKBUILD)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
-add_subdirectory(external/abseil-cpp)
-add_subdirectory(external/googletest)
+# External dependencies
+add_subdirectory(external/abseil-cpp EXCLUDE_FROM_ALL)
+add_subdirectory(external/googletest EXCLUDE_FROM_ALL)
 
-# Create a library from your core sources (excluding main.cc)
+# Core library
 add_library(minimalloc_core STATIC
   src/converter.cc
   src/minimalloc.cc
@@ -29,75 +31,34 @@ target_include_directories(minimalloc_core PUBLIC
 
 # C++ executable
 add_executable(minimalloc src/main.cc)
-target_link_libraries(minimalloc
+target_link_libraries(minimalloc PRIVATE
   minimalloc_core
   absl::flags_parse
   absl::log
   absl::log_initialize
-  absl::statusor
 )
 
 # Python bindings (only when building via pip/scikit-build)
 if(SKBUILD)
   find_package(pybind11 CONFIG REQUIRED)
-  
+
   pybind11_add_module(_minimalloc MODULE python/minimalloc/_bindings.cpp)
   target_link_libraries(_minimalloc PRIVATE minimalloc_core)
-  
-  install(TARGETS _minimalloc DESTINATION minimalloc)
+
+  install(TARGETS _minimalloc LIBRARY DESTINATION minimalloc)
 endif()
 
-# Tests (skip when building Python module)
+# C++ tests (skip when building Python module)
 if(NOT SKBUILD)
   enable_testing()
-  
-  add_executable(converter_test
-    tests/converter_test.cc
-  )
-  target_link_libraries(converter_test
-    minimalloc_core
-    GTest::gmock_main
-    GTest::gtest_main
-  )
-  add_test(NAME converter_test COMMAND converter_test)
-  
-  add_executable(minimalloc_test
-    tests/minimalloc_test.cc
-  )
-  target_link_libraries(minimalloc_test
-    minimalloc_core
-    GTest::gmock_main
-    GTest::gtest_main
-  )
-  add_test(NAME minimalloc_test COMMAND minimalloc_test)
-  
-  add_executable(solver_test
-    tests/solver_test.cc
-  )
-  target_link_libraries(solver_test
-    minimalloc_core
-    GTest::gmock_main
-    GTest::gtest_main
-  )
-  add_test(NAME solver_test COMMAND solver_test)
-  
-  add_executable(sweeper_test
-    tests/sweeper_test.cc
-  )
-  target_link_libraries(sweeper_test
-    minimalloc_core
-    GTest::gtest_main
-  )
-  add_test(NAME sweeper_test COMMAND sweeper_test)
-  
-  add_executable(validator_test
-    tests/validator_test.cc
-  )
-  target_link_libraries(validator_test
-    minimalloc_core
-    GTest::gtest_main
-  )
-  add_test(NAME validator_test COMMAND validator_test)
-  
-  include(GoogleTest)
+
+  foreach(test_name converter minimalloc solver sweeper validator)
+    add_executable(${test_name}_test tests/${test_name}_test.cc)
+    target_link_libraries(${test_name}_test PRIVATE
+      minimalloc_core
+      GTest::gtest_main
+      GTest::gmock_main
+    )
+    add_test(NAME ${test_name}_test COMMAND ${test_name}_test)
+  endforeach()
 endif()
