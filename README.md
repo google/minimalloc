@@ -26,9 +26,11 @@ By limiting our exploration to the subset of canonical solutions, we can dramati
 
 ## Setup
 
-```
+```bash
 $ git clone --recursive git@github.com:google/minimalloc.git && \
-      cd minimalloc && cmake -DCMAKE_BUILD_TYPE=Release && make
+      cd minimalloc && \
+      cmake -B build -DCMAKE_BUILD_TYPE=Release && \
+      cmake --build build -j$(nproc)
 ```
 
 ## Example input file
@@ -44,8 +46,8 @@ b5,0,21,4
 
 ## Example usage
 
-```
-$ ./minimalloc --capacity=12 --input=benchmarks/examples/input.12.csv --output=output.12.csv
+```bash
+$ ./build/minimalloc --capacity=12 --input=benchmarks/examples/input.12.csv --output=output.12.csv
 ```
 
 ## Example output file
@@ -75,7 +77,7 @@ problem = mm.from_csv_file("benchmarks/examples/input.12.csv")
 problem.capacity = 12
 solver = mm.Solver()
 solution = solver.solve(problem)
-print(solution) # Solution(offsets=[8, 8, 4, 4, 0])
+print(solution) # Solution(offsets=[8, 8, 4, 4, 0], height=12))
 ```
 
 During development, you can install the package in "editable" mode with:

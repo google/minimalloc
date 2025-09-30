@@ -51,14 +51,11 @@ def _parse_duration(duration_str: str) -> float | None:
     raise ValueError(f"Invalid duration format: {duration_str}")
 
 
-def main() -> int:
+def _parse_args(arg_list: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="MiniMalloc: State-of-the-art static memory allocation solver"
     )
 
-    parser.add_argument(
-        "--capacity", type=int, default=0, help="The maximum memory capacity"
-    )
     parser.add_argument(
         "--input",
         type=str,
@@ -72,15 +69,19 @@ def main() -> int:
         help="The path to the output CSV file",
     )
     parser.add_argument(
-        "--timeout",
-        type=str,
-        default="",
-        help="The time limit for the solver (e.g., '10s', '5m', '1h', 'inf')",
+        "--capacity", type=int, default=0, help="The maximum memory capacity"
     )
     parser.add_argument(
         "--validate", action="store_true", help="Validates the solver's output"
     )
 
+    # Solver parameters options
+    parser.add_argument(
+        "--timeout",
+        type=str,
+        default="",
+        help="The time limit for the solver (e.g., '10s', '5m', '1h', 'inf')",
+    )
     parser.add_argument(
         "--canonical-only",
         action="store_true",
@@ -189,7 +190,11 @@ def main() -> int:
         action="store_false",
         help="Disable hatless pruning",
     )
-
+    parser.add_argument(
+        "--minimize-capacity",
+        action="store_true",
+        help="Find the minimum capacity needed for the allocation",
+    )
     parser.add_argument(
         "--preordering-heuristics",
         type=str,
@@ -197,16 +202,16 @@ def main() -> int:
         help="Static preordering heuristics to attempt (comma-separated)",
     )
 
-    args = parser.parse_args()
+    return parser.parse_args(arg_list)
 
-    try:
-        problem = mm.from_csv_file(args.input)
-    except Exception as e:
-        print(f"Error reading input file: {e}", file=sys.stderr)
+
+def _run_solver(args: argparse.Namespace) -> int:
+    """Core solver logic, returns exit code."""
+
+    problem = mm.from_csv_file(args.input)
+    if problem is None:
+        print(f"Error reading input file: {args.input}", file=sys.stderr)
         return 1
-
-    if args.capacity > 0:
-        problem.capacity = args.capacity
 
     params = mm.SolverParams()
     params.timeout = _parse_duration(args.timeout)
@@ -219,40 +224,54 @@ def main() -> int:
     params.dynamic_decomposition = args.dynamic_decomposition
     params.monotonic_floor = args.monotonic_floor
     params.hatless_pruning = args.hatless_pruning
+    params.minimize_capacity = args.minimize_capacity
 
     preordering_heuristics = [
         h.strip() for h in args.preordering_heuristics.split(",") if h.strip()
     ]
     params.preordering_heuristics = preordering_heuristics
 
-    start_time = time.time()
-    try:
-        solver = mm.Solver(params)
-        solution = solver.solve(problem)
-    except Exception as e:
-        print(f"Solver failed: {e}", file=sys.stderr)
+    if args.capacity > 0:
+        problem.capacity = args.capacity
+    elif args.minimize_capacity:
+        problem.capacity = 2**30  # Large initial capacity
+    else:
+        print(
+            "Error: --capacity must be > 0 unless --minimize-capacity is set",
+            file=sys.stderr,
+        )
         return 1
+
+    # Invoke the solver
+    start_time = time.time()
+    solver = mm.Solver(params)
+    solution = solver.solve(problem)
     end_time = time.time()
+
+    if solution is None:
+        print("Error: Solver failed!", file=sys.stderr)
+        return 1
+
     elapsed_time = end_time - start_time
     print(f"Elapsed time: {elapsed_time:.3f}s", file=sys.stderr)
 
     if args.validate:
-        validation_result = mm.validate(problem, solution)
-        result_str = (
-            "PASS" if validation_result == mm.ValidationResult.GOOD else "FAIL"
-        )
+        result = mm.validate(problem, solution)
+        result_str = "PASS" if result == mm.ValidationResult.GOOD else "FAIL"
         print(result_str, file=sys.stderr)
+        if result != mm.ValidationResult.GOOD:
+            return 1
 
-    try:
-        output_path = Path(args.output)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w") as f:
-            f.write(mm.to_csv(problem, solution))
-    except Exception as e:
-        print(f"Error writing output file: {e}", file=sys.stderr)
-        return 1
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    mm.to_csv_file(args.output, problem, solution)
 
     return 0
+
+
+def main(arg_list: list[str] | None = None) -> int:
+    args = _parse_args(arg_list)
+    return _run_solver(args)
 
 
 if __name__ == "__main__":
