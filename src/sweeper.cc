@@ -93,6 +93,15 @@ std::vector<SweepPoint> CreatePoints(const Problem& problem) {
     const Buffer& buffer = problem.buffers[buffer_idx];
     const Lifespan& lifespan = buffer.lifespan;
     const Window window = {0, buffer.size};
+    // Fast path: a gapless buffer contributes exactly its two endpoints, so
+    // skip the deque + two hash sets entirely.
+    if (buffer.gaps.empty() && lifespan.lower() != lifespan.upper()) {
+      all_points.push_back(
+          {buffer_idx, lifespan.lower(), kLeft, window, /*endpoint=*/true});
+      all_points.push_back(
+          {buffer_idx, lifespan.upper(), kRight, window, /*endpoint=*/true});
+      continue;
+    }
     std::deque<SweepPoint> points;
     absl::flat_hash_set<TimeValue> leftTimes, rightTimes;
     // Insert left & right endpoints for all *windowed* gaps.
@@ -148,7 +157,8 @@ SweepResult Sweep(const Problem& problem) {
   SweepResult result;
   const auto num_buffers = problem.buffers.size();
   const std::vector<SweepPoint> points = CreatePoints(problem);
-  Section actives, alive;
+  ActiveSet actives, alive;
+  Section section_scratch;
   TimeValue last_section_time = -1;
   SectionIdx last_section_idx = 0;
   // Create a reverse index (from buffers to sections) for quick lookup.
@@ -162,7 +172,9 @@ SweepResult Sweep(const Problem& problem) {
       // Create a new cross section of buffers if one doesn't yet exist.
       if (last_section_time < point.time_value) {
         last_section_time = point.time_value;
-        result.sections.push_back(actives);
+        section_scratch.assign(actives.begin(), actives.end());
+        std::sort(section_scratch.begin(), section_scratch.end());
+        result.sections.push_back(section_scratch);
       }
       // If it's a right endpoint, remove it from the set of active buffers.
       actives.erase(buffer_idx);
@@ -189,13 +201,13 @@ SweepResult Sweep(const Problem& problem) {
           const Buffer& alive = problem.buffers[alive_idx];
           auto alive_effective_size = alive.effective_size(buffer);
           if (alive_effective_size) {
-            result.buffer_data[alive_idx].overlaps.insert(
+            result.buffer_data[alive_idx].overlaps.push_back(
                 {buffer_idx, *alive_effective_size});
           }
           auto effective_size = buffer.effective_size(alive);
           if (effective_size) {
-            result.buffer_data[buffer_idx].overlaps.insert({alive_idx,
-                                                            *effective_size});
+            result.buffer_data[buffer_idx].overlaps.push_back(
+                {alive_idx, *effective_size});
           }
         }
       }
@@ -204,6 +216,11 @@ SweepResult Sweep(const Problem& problem) {
       if (point.endpoint) alive.insert(buffer_idx);
       buffer_idx_to_section_start[buffer_idx] = result.sections.size();
     }
+  }
+  // Each ordered pair is visited exactly once, so no dedup is needed -- just
+  // restore the sorted order that the btree_set used to provide.
+  for (BufferData& buffer_data : result.buffer_data) {
+    std::sort(buffer_data.overlaps.begin(), buffer_data.overlaps.end());
   }
   return result;
 }

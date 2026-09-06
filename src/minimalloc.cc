@@ -74,6 +74,9 @@ Area Buffer::area() const {
 std::optional<int64_t> Buffer::effective_size(const Buffer& x) const {
   if (lifespan.upper() <= x.lifespan.lower()) return std::nullopt;
   if (x.lifespan.upper() <= lifespan.lower()) return std::nullopt;
+  // Fast path: with no gaps on either side, both buffers are fully active
+  // throughout the overlap, so the answer is always our own size.
+  if (gaps.empty() && x.gaps.empty()) return size;
   const Window window = {0, size};
   const Window x_window = {0, x.size};
   std::vector<Point> points = {{0, lifespan.lower(), kLeft, window},

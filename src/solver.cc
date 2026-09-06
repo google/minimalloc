@@ -20,6 +20,7 @@ limitations under the License.
 
 #include <algorithm>
 #include <atomic>
+#include <deque>
 #include <cstdint>
 #include <iomanip>
 #include <limits>
@@ -80,7 +81,8 @@ class SolverImpl {
       const Problem& problem, const SweepResult& sweep_result,
       int64_t* backtracks, std::atomic<bool>& cancelled) : params_(params),
       start_time_(start_time), problem_(problem), sweep_result_(sweep_result),
-      backtracks_(*backtracks), cancelled_(cancelled) {}
+      backtracks_(*backtracks), cancelled_(cancelled),
+      has_timeout_(params.timeout != absl::InfiniteDuration()) {}
 
   absl::StatusOr<Solution> Solve() {
     if (problem_.buffers.empty()) return solution_;
@@ -89,6 +91,7 @@ class SolverImpl {
     solution_.offsets.resize(num_buffers, kNoOffset);
     min_offsets_.resize(num_buffers);
     section_data_.resize(sweep_result_.sections.size());
+    section_stamp_.assign(sweep_result_.sections.size(), 0);
     for (BufferIdx buffer_idx = 0; buffer_idx < num_buffers; ++buffer_idx) {
       const BufferData& buffer_data = sweep_result_.buffer_data[buffer_idx];
       for (const SectionSpan& section_span : buffer_data.section_spans) {
@@ -216,10 +219,8 @@ class SolverImpl {
   }
 
   // Updates section data given that 'buffer_idx' is the next item to be placed.
-  std::vector<SectionChange> UpdateSectionData(
-      const absl::flat_hash_set<SectionIdx>& affected_sections,
-      BufferIdx buffer_idx) {
-    std::vector<SectionChange> section_changes;
+  void UpdateSectionData(BufferIdx buffer_idx) {
+    std::vector<SectionChange>& section_changes = section_trail_;
     const Offset offset = assignment_.offsets[buffer_idx];
     // For any section this buffer resides in, bump up the floor & drop the sum.
     const BufferData& buffer_data = sweep_result_.buffer_data[buffer_idx];
@@ -236,7 +237,7 @@ class SolverImpl {
       }
     }
     // The floor of any section cannot be lower than its lowest minimum offset.
-    for (const SectionIdx s_idx : affected_sections) {
+    for (const SectionIdx s_idx : affected_sections_) {
       Offset min_offset = std::numeric_limits<Offset>::max();
       for (const BufferIdx other_idx : sweep_result_.sections[s_idx]) {
         if (assignment_.offsets[other_idx] == kNoOffset) {
@@ -252,15 +253,14 @@ class SolverImpl {
         section_data_[s_idx].floor = min_offset;
       }
     }
-    return section_changes;
   }
 
   // Restores the section data by reversing any recorded changes.
-  void RestoreSectionData(
-      const std::vector<SectionChange>& section_changes,
-      BufferIdx buffer_idx) {
-    for (auto c = section_changes.rbegin(); c != section_changes.rend(); ++c) {
-      section_data_[c->section_idx].floor = c->floor;
+  void RestoreSectionData(size_t mark, BufferIdx buffer_idx) {
+    while (section_trail_.size() > mark) {
+      const SectionChange& c = section_trail_.back();
+      section_data_[c.section_idx].floor = c.floor;
+      section_trail_.pop_back();
     }
     // For any section this buffer resides in, increase the sum.
     const BufferData& buffer_data = sweep_result_.buffer_data[buffer_idx];
@@ -275,12 +275,10 @@ class SolverImpl {
   }
 
   // Updates min offset data, given that 'buffer_idx' is the next to be placed.
-  std::optional<std::vector<OffsetChange>> UpdateMinOffsets(
-      BufferIdx buffer_idx,
-      absl::flat_hash_set<SectionIdx>& affected_sections,
-      bool& fixed_offset_failure) {
+  // Returns 'true' if this buffer is "hatless" (nothing unallocated overhead).
+  bool UpdateMinOffsets(BufferIdx buffer_idx, bool& fixed_offset_failure) {
     bool hatless = true;
-    std::vector<OffsetChange> offset_changes;
+    std::vector<OffsetChange>& offset_changes = offset_trail_;
     const Offset offset = assignment_.offsets[buffer_idx];
     // For any overlap this buffer participates in, bump up its minimum offset.
     const std::vector<BufferData>& buffer_data = sweep_result_.buffer_data;
@@ -306,18 +304,22 @@ class SolverImpl {
         const SectionRange& section_range = section_span.section_range;
         for (SectionIdx s_idx = section_range.lower();
              s_idx < section_range.upper(); ++s_idx) {
-          affected_sections.insert(s_idx);
+          // Generation-stamped dedup: O(1), no hashing, no allocation.
+          if (section_stamp_[s_idx] == stamp_) continue;
+          section_stamp_[s_idx] = stamp_;
+          affected_sections_.push_back(s_idx);
         }
       }
     }
-    if (hatless) return std::nullopt;
-    return offset_changes;
+    return hatless;
   }
 
   // Restores the minimum offsets by reversing any recorded changes.
-  void RestoreMinOffsets(const std::vector<OffsetChange>& offset_changes) {
-    for (auto c = offset_changes.rbegin(); c != offset_changes.rend(); ++c) {
-      min_offsets_[c->buffer_idx] = c->min_offset;
+  void RestoreMinOffsets(size_t mark) {
+    while (offset_trail_.size() > mark) {
+      const OffsetChange& c = offset_trail_.back();
+      min_offsets_[c.buffer_idx] = c.min_offset;
+      offset_trail_.pop_back();
     }
   }
 
@@ -338,10 +340,15 @@ class SolverImpl {
 
   // Orders unallocated buffers by their minimum possible offset values, using
   // buffer areas as a tie-breaker.
-  std::vector<OrderData> ComputeOrdering(
+  // Also returns the minimum height of any unallocated buffer (no other buffer
+  // should be assigned an offset at or above this value).  The minimum is
+  // order-independent, so it can be folded into this pass, saving a second
+  // traversal plus a double indirection per element.
+  void ComputeOrdering(
       const std::vector<PreorderData>& preordering,
-      const std::vector<OrderData>& orig_ordering) {
-    std::vector<OrderData> ordering;
+      const std::vector<OrderData>& orig_ordering,
+      std::vector<OrderData>& ordering) {
+    ordering.clear();
     for (const auto [offset, preorder_idx] : orig_ordering) {
       const BufferIdx buffer_idx = preordering[preorder_idx].buffer_idx;
       // If this buffer has already been assigned, keep looking.
@@ -351,7 +358,6 @@ class SolverImpl {
           {.offset = new_offset, .preorder_idx = preorder_idx});
     }
     if (params_.dynamic_ordering) absl::c_sort(ordering, kDynamicComparator);
-    return ordering;
   }
 
   // Determines the minimum height of any unallocated buffer ... no other buffer
@@ -379,19 +385,33 @@ class SolverImpl {
       const Offset min_offset,
       const PreorderIdx min_preorder_idx) {
     DLOG(INFO) << __func__ << " (Start) " << partition;
+    const int64_t depth = depth_level_++;
+    struct PopDepth {
+      int64_t& d;
+      ~PopDepth() { --d; }
+    } pop_depth{depth_level_};
     if (nodes_remaining_ <= 0) {
       DLOG(INFO) << __func__ << " (End)   " << partition << ", status "
           << absl::StatusCodeToString(absl::StatusCode::kAborted);
       return absl::StatusCode::kAborted;
     }
     --nodes_remaining_;
-    if (absl::Now() - start_time_ > params_.timeout || cancelled_) {
+    // Only touch the clock when a finite timeout was actually requested, and
+    // then only once every 1024 nodes.  absl::Now() costs ~27ns here, which is
+    // comparable to the useful work at a shallow node.
+    if (cancelled_.load(std::memory_order_relaxed) ||
+        (has_timeout_ && (nodes_remaining_ & 0x3FF) == 0 &&
+         absl::Now() - start_time_ > params_.timeout)) {
       DLOG(INFO) << __func__ << " (End)   " << partition << ", status "
           << absl::StatusCodeToString(absl::StatusCode::kDeadlineExceeded);
       return absl::StatusCode::kDeadlineExceeded;
     }
-    const std::vector<OrderData> ordering =
-        ComputeOrdering(preordering, orig_ordering);
+    // 'ordering' must outlive the recursive calls below (it is handed down as
+    // 'orig_ordering'), so keep one reusable vector per recursion depth.  A
+    // deque is used because its references stay valid as it grows.
+    while (ordering_pool_.size() <= (size_t)depth) ordering_pool_.emplace_back();
+    std::vector<OrderData>& ordering = ordering_pool_[depth];
+    ComputeOrdering(preordering, orig_ordering, ordering);
     if (ordering.empty()) {
       // Store offsets for all the buffers that participate in this partition.
       for (const BufferIdx buffer_idx : partition.buffer_idxs) {
@@ -417,12 +437,13 @@ class SolverImpl {
         if (offset > *buffer.offset) continue;
       }
       assignment_.offsets[buffer_idx] = offset;
-      absl::flat_hash_set<SectionIdx> affected_sections;
+      const size_t offset_mark = offset_trail_.size();
+      const size_t section_mark = section_trail_.size();
+      affected_sections_.clear();
+      ++stamp_;
       bool fixed_offset_failure = false;
-      auto offset_changes = UpdateMinOffsets(buffer_idx, affected_sections,
-		                             fixed_offset_failure);
-      std::vector<SectionChange> section_changes =
-          UpdateSectionData(affected_sections, buffer_idx);
+      const bool hatless = UpdateMinOffsets(buffer_idx, fixed_offset_failure);
+      UpdateSectionData(buffer_idx);
       absl::StatusCode status_code = absl::StatusCode::kNotFound;
       if (!fixed_offset_failure && Check(partition, offset)) {
         DLOG(INFO) << "DFS (Enter) Depth: " << std::setw(5) << depth_++
@@ -436,8 +457,8 @@ class SolverImpl {
         DLOG(INFO) << "DFS (Leave) Depth: " << std::setw(5) << --depth_
             << ", BufferIdx: " << std::setw(5) << buffer_idx;
       }
-      RestoreSectionData(section_changes, buffer_idx);
-      if (offset_changes) RestoreMinOffsets(*offset_changes);
+      RestoreSectionData(section_mark, buffer_idx);
+      RestoreMinOffsets(offset_mark);
       assignment_.offsets[buffer_idx] = kNoOffset;  // Mark it unallocated.
       // If a feasible solution *or* timeout, abort search.
       if (status_code != absl::StatusCode::kNotFound) {
@@ -445,7 +466,7 @@ class SolverImpl {
             << absl::StatusCodeToString(status_code);
         return status_code;
       }
-      if (!offset_changes && params_.hatless_pruning) break;
+      if (hatless && params_.hatless_pruning) break;
     }
     ++backtracks_;
     DLOG(INFO) << __func__ << " (End)  " << partition << ", status "
@@ -534,12 +555,22 @@ class SolverImpl {
   const SweepResult& sweep_result_;
   int64_t& backtracks_;
   std::atomic<bool>& cancelled_;
+  const bool has_timeout_;
 
   Solution assignment_;
   Solution solution_;
   std::vector<Offset> min_offsets_;
   std::vector<SectionData> section_data_;
   std::vector<CutCount> cuts_;
+  // Persistent undo trails: callers save size() on entry and unwind on exit,
+  // which removes two heap allocations per search node.
+  std::vector<SectionChange> section_trail_;
+  std::vector<OffsetChange> offset_trail_;
+  std::vector<SectionIdx> affected_sections_;
+  std::vector<uint64_t> section_stamp_;
+  uint64_t stamp_ = 0;
+  std::deque<std::vector<OrderData>> ordering_pool_;
+  int64_t depth_level_ = 0;
   int64_t nodes_remaining_ = std::numeric_limits<int64_t>::max();
 
   // debug
