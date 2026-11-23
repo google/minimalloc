@@ -4,6 +4,9 @@ project(MiniMalloc LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(MINIMALLOC_ENABLE_TINY_SOLVER
+  "Build TinySolver (requires OR-Tools)" OFF)
+
 # PIC for Python module compatibility
 if(SKBUILD)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -29,6 +32,12 @@ target_include_directories(minimalloc_core PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+if(MINIMALLOC_ENABLE_TINY_SOLVER)
+  find_package(ortools CONFIG REQUIRED)
+  target_sources(minimalloc_core PRIVATE src/tiny_solver.cc)
+  target_link_libraries(minimalloc_core PUBLIC ortools::ortools)
+endif()
+
 # C++ executable
 add_executable(minimalloc src/main.cc)
 target_link_libraries(minimalloc PRIVATE
@@ -52,7 +61,12 @@ endif()
 if(NOT SKBUILD)
   enable_testing()
 
-  foreach(test_name converter minimalloc solver sweeper validator)
+  set(MINIMALLOC_TESTS converter minimalloc solver sweeper validator)
+  if(MINIMALLOC_ENABLE_TINY_SOLVER)
+    list(APPEND MINIMALLOC_TESTS tiny_solver)
+  endif()
+
+  foreach(test_name ${MINIMALLOC_TESTS})
     add_executable(${test_name}_test tests/${test_name}_test.cc)
     target_link_libraries(${test_name}_test PRIVATE
       minimalloc_core
