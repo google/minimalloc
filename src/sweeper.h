@@ -72,7 +72,11 @@ struct SectionSpan {
 //   sections: |     sec0    |     sec1    | sec2 |            sec3           |
 //             |======|======|======|======|======|======|======|======|======|
 
-using Section = absl::flat_hash_set<BufferIdx>;
+// The solver only ever *iterates* a section, never queries it, so a sorted
+// vector beats a hash set on locality.  Sweep() still uses a hash set for the
+// mutable active/alive sets and converts on the way out.
+using Section = std::vector<BufferIdx>;
+using ActiveSet = absl::flat_hash_set<BufferIdx>;
 
 // Partitions store various preprocessed attributes for a subset of a Problem's
 // buffers.  Partitions are mutually exclusive -- that is, any buffer belongs to
@@ -133,7 +137,7 @@ struct BufferData {
   std::vector<SectionSpan> section_spans;
 
   // Contains a set of buffers that overlap at some point in time with this one.
-  absl::btree_set<Overlap> overlaps;
+  std::vector<Overlap> overlaps;  // Sorted; built once, read hot.
 
   bool operator==(const BufferData& x) const;
 };

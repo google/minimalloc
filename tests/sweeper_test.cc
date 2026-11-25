@@ -306,7 +306,7 @@ TEST(SweeperTest, SuperLongBufferPreventsPartitioning) {
   EXPECT_EQ(
       Sweep(problem),
       (SweepResult{
-          .sections = {{0, 3}, {1, 3, 2}, {3, 2}},
+          .sections = {{0, 3}, {1, 2, 3}, {2, 3}},
           .partitions = {
               {.buffer_idxs = {0, 3, 1, 2}, .section_range = {0, 3}},
           },
@@ -325,7 +325,7 @@ TEST(SweeperTest, SuperLongBufferPreventsPartitioning) {
 
 TEST(CalculateCutsTest, SuperLongBufferPreventsPartitioning) {
   const SweepResult sweep_result = {
-      .sections = {{0, 3}, {1, 3, 2}, {3, 2}},
+      .sections = {{0, 3}, {1, 2, 3}, {2, 3}},
       .buffer_data = {
           {.section_spans = {{.section_range = {0, 1}, .window = {0, 2}}},
            .overlaps = {{3, 2}}},
@@ -388,7 +388,7 @@ TEST(SweeperTest, BuffersOutOfOrder) {
   EXPECT_EQ(
       Sweep(problem),
       (SweepResult{
-          .sections = {{2}, {1, 0}},
+          .sections = {{2}, {0, 1}},
           .partitions = {
               {.buffer_idxs = {2}, .section_range = {0, 1}},
               {.buffer_idxs = {1, 0}, .section_range = {1, 2}},
@@ -405,7 +405,7 @@ TEST(SweeperTest, BuffersOutOfOrder) {
 
 TEST(CalculateCutsTest, BuffersOutOfOrder) {
   const SweepResult sweep_result = {
-      .sections = {{2}, {1, 0}},
+      .sections = {{2}, {0, 1}},
       .buffer_data = {
           {.section_spans = {{.section_range = {1, 2}, .window = {0, 1}}},
            .overlaps = {{1, 1}}},
